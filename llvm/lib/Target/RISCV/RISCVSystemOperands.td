@@ -517,6 +517,20 @@ def : SysReg<"dscratch1", 0x7B3>;
 // Vendor CSRs
 //===-----------------------------------------------
 
+// MyRISCV microcontroller system extensions.
+let FeaturesRequired = [{ {RISCV::FeatureVendorXpasmy} }] in {
+def : SysReg<"myriscv.user_context", 0x7F0, RV32Only=true>;
+def : SysReg<"myriscv.cie", 0x7F2, RV32Only=true>;
+def : SysReg<"myriscv.waitfor", 0x7F3, RV32Only=true>;
+def : SysReg<"myriscv.sys_context", 0xFF4, RV32Only=true>;
+def : SysReg<"myriscv.ncontexts", 0xFF5, RV32Only=true>;
+}
+
+let FeaturesRequired = [{ {RISCV::FeatureVendorXpaindcsr} }] in {
+foreach i = 0 - 31 in
+  def : SysReg<"myriscv.indirect_x" # i, !add(0xBE0, i), RV32Only=true>;
+}
+
 // XSfmclic
 let FeaturesRequired = [{ {RISCV::FeatureVendorXSfmclic} }] in {
 def : SysReg<"sf.mtvt", 0x307>;

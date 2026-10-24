@@ -135,7 +135,9 @@ def MYRISCV : RISCVProcessorModel<"myriscv",
                                    FeatureStdExtZalrsc,
                                    FeatureStdExtZiccif,
                                    FeatureStdExtZicclsm,
-                                   FeatureStdExtZiccrse],
+                                   FeatureStdExtZiccrse,
+                                   FeatureVendorXpaimy,
+                                   FeatureVendorXpasmy],
                                   [TuneNoDefaultUnroll]>;
 
 // clang-format off
