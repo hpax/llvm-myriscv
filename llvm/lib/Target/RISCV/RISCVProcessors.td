@@ -116,6 +116,28 @@ def GENERIC : RISCVTuneProcessorModel<"generic", NoSchedModel>, GenericTuneInfo;
 def GENERIC_OOO : RISCVTuneProcessorModel<"generic-ooo", GenericOOOModel>,
                   GenericTuneInfo;
 
+def MYRISCV : RISCVProcessorModel<"myriscv",
+                                  MyRISCVModel,
+                                  [Feature32Bit,
+                                   FeatureStdExtI,
+                                   FeatureStdExtZicsr,
+                                   FeatureStdExtZicntr,
+                                   FeatureStdExtZifencei,
+                                   FeatureStdExtC,
+                                   FeatureStdExtZcb,
+                                   FeatureStdExtZba,
+                                   FeatureStdExtZbb,
+                                   FeatureStdExtZbs,
+                                   FeatureStdExtZicond,
+                                   FeatureStdExtZmmul,
+                                   FeatureStdExtZicbom,
+                                   FeatureStdExtZkr,
+                                   FeatureStdExtZalrsc,
+                                   FeatureStdExtZiccif,
+                                   FeatureStdExtZicclsm,
+                                   FeatureStdExtZiccrse],
+                                  [TuneNoDefaultUnroll]>;
+
 // clang-format off
 def MIPS_P8700 : RISCVProcessorModel<"mips-p8700",
                                      MIPSP8700Model,
