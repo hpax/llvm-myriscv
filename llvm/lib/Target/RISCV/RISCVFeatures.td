@@ -1335,6 +1335,24 @@ def HasStdExtY : Predicate<"Subtarget->hasStdExtY()">,
 // Vendor extensions
 //===----------------------------------------------------------------------===//
 
+// MyRISCV extensions. Xpaimy collects the default nonprivileged ISA options;
+// Xpasmy covers the register-context microcontroller system instructions.
+def FeatureVendorXpaimy
+    : RISCVExtension<1, 0, "MyRISCV nonprivileged extensions">;
+def FeatureVendorXpasmy
+    : RISCVExtension<1, 0,
+                     "MyRISCV microcontroller system extensions">;
+def FeatureVendorXpaindcsr
+    : RISCVExtension<1, 0, "MyRISCV indirect CSR access">;
+
+// Ventana Extensions
+
+def FeatureVendorXVentanaCondOps
+    : RISCVExtension<1, 0, "Ventana Conditional Ops">;
+def HasVendorXVentanaCondOps : Predicate<"Subtarget->hasVendorXVentanaCondOps()">,
+                               AssemblerPredicate<(all_of FeatureVendorXVentanaCondOps),
+                                   "'XVentanaCondOps' (Ventana Conditional Ops)">;
+
 // T-Head Extensions
 
 def FeatureVendorXTHeadBa
