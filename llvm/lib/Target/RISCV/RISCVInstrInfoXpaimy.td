@@ -69,7 +69,7 @@ class MyRISCVExtend<bits<2> kind, string mnemonic>
 }
 }
 
-let Predicates = [HasVendorXpaimy] in {
+let Predicates = [HasVendorXpaimy], AddedComplexity = 1 in {
 def SH1SUB : MyRISCVStdALURR<0b0110000, 0b010, "sh1sub">;
 def SH2SUB : MyRISCVStdALURR<0b0110000, 0b100, "sh2sub">;
 def SH3SUB : MyRISCVStdALURR<0b0110000, 0b110, "sh3sub">;
@@ -132,7 +132,50 @@ def : Pat<(sub (shl GPR:$rs1, (i32 2)), GPR:$rs2),
           (SH2SUB GPR:$rs1, GPR:$rs2)>;
 def : Pat<(sub (shl GPR:$rs1, (i32 3)), GPR:$rs2),
           (SH3SUB GPR:$rs1, GPR:$rs2)>;
+
+// Select the compare directly: deriving an unsigned comparison from the sign
+// of a subtraction would be incorrect when that subtraction wraps.
+def : Pat<(XLenVT (setge (XLenVT GPR:$rs1), (XLenVT GPR:$rs2))),
+          (SGE GPR:$rs1, GPR:$rs2)>;
+def : Pat<(XLenVT (setuge (XLenVT GPR:$rs1), (XLenVT GPR:$rs2))),
+          (SGEU GPR:$rs1, GPR:$rs2)>;
+def : Pat<(xor (XLenVT (setlt (XLenVT GPR:$rs1), (XLenVT GPR:$rs2))),
+                (XLenVT 1)),
+          (SGE GPR:$rs1, GPR:$rs2)>;
+def : Pat<(xor (XLenVT (setult (XLenVT GPR:$rs1), (XLenVT GPR:$rs2))),
+                (XLenVT 1)),
+          (SGEU GPR:$rs1, GPR:$rs2)>;
+
+// Match only compares against zero, which is precisely the sign test that
+// CNEG and CNEGN implement.
+def : Pat<(XLenVT (abs GPR:$rs1)), (CNEG GPR:$rs1, GPR:$rs1)>;
+def : Pat<(sub (XLenVT 0), (XLenVT (abs GPR:$rs1))),
+          (CNEGN GPR:$rs1, GPR:$rs1)>;
+def : Pat<(riscv_selectcc (XLenVT GPR:$rs1), (XLenVT 0), SETLT,
+                          (sub (XLenVT 0), GPR:$rs2), GPR:$rs2),
+          (CNEG GPR:$rs1, GPR:$rs2)>;
+def : Pat<(riscv_selectcc (XLenVT GPR:$rs1), (XLenVT 0), SETGE,
+                          GPR:$rs2, (sub (XLenVT 0), GPR:$rs2)),
+          (CNEG GPR:$rs1, GPR:$rs2)>;
+def : Pat<(riscv_selectcc (XLenVT GPR:$rs1), (XLenVT 0), SETLT,
+                          GPR:$rs2, (sub (XLenVT 0), GPR:$rs2)),
+          (CNEGN GPR:$rs1, GPR:$rs2)>;
+def : Pat<(riscv_selectcc (XLenVT GPR:$rs1), (XLenVT 0), SETGE,
+                          (sub (XLenVT 0), GPR:$rs2), GPR:$rs2),
+          (CNEGN GPR:$rs1, GPR:$rs2)>;
+def : Pat<(riscv_selectcc (XLenVT GPR:$rs1), (XLenVT 0), SETLT,
+                          (XLenVT -1), (XLenVT 1)),
+          (CNEGI GPR:$rs1, 1)>;
+def : Pat<(riscv_selectcc (XLenVT GPR:$rs1), (XLenVT 0), SETGE,
+                          (XLenVT 1), (XLenVT -1)),
+          (CNEGI GPR:$rs1, 1)>;
 }
+
+let Predicates = [HasVendorXpaimy, IsRV32], AddedComplexity = 1 in
+def : Pat<(or (sra GPR:$rs1, (i32 31)), (i32 1)), (CNEGI GPR:$rs1, 1)>;
+
+let Predicates = [HasVendorXpaimy, IsRV64], AddedComplexity = 1 in
+def : Pat<(or (sra GPR:$rs1, (i64 63)), (i64 1)), (CNEGI GPR:$rs1, 1)>;
 
 let hasSideEffects = 1, mayLoad = 0, mayStore = 0,
     Predicates = [HasVendorXpasmy] in {

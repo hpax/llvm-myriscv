@@ -4,6 +4,8 @@
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
+// Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
+//
 //===----------------------------------------------------------------------===//
 //
 // This file defines the interfaces that RISC-V uses to lower LLVM code into a
@@ -501,7 +503,7 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
       setOperationAction(ISD::CTLS, MVT::i32, Custom);
   }
 
-  if (Subtarget.hasStdExtP() ||
+  if (Subtarget.hasStdExtP() || Subtarget.hasVendorXpaimy() ||
       (Subtarget.hasVendorXCValu() && !Subtarget.is64Bit())) {
     setOperationAction(ISD::ABS, XLenVT, Legal);
     if (Subtarget.is64Bit())
@@ -10282,9 +10284,29 @@ SDValue RISCVTargetLowering::lowerSELECT(SDValue Op, SelectionDAG &DAG) const {
     return DAG.getNode(ISD::VSELECT, DL, VT, CondSplat, TrueV, FalseV);
   }
 
+  // Preserve sign-controlled negations for Xpaimy. Reconstructing their
+  // condition from a subtraction would not be valid for unsigned comparisons.
+  bool IsXpaimyCNeg = false;
+  if (Subtarget.hasVendorXpaimy() && VT == XLenVT &&
+      CondV.getOpcode() == ISD::SETCC &&
+      isNullConstant(CondV.getOperand(1))) {
+    ISD::CondCode CC = cast<CondCodeSDNode>(CondV.getOperand(2))->get();
+    auto IsNegation = [](SDValue A, SDValue B) {
+      return A.getOpcode() == ISD::SUB && isNullConstant(A.getOperand(0)) &&
+             A.getOperand(1) == B;
+    };
+    IsXpaimyCNeg = (CC == ISD::SETLT || CC == ISD::SETGE) &&
+                   (IsNegation(TrueV, FalseV) ||
+                    IsNegation(FalseV, TrueV) ||
+                    (isAllOnesConstant(TrueV) && isOneConstant(FalseV)) ||
+                    (isOneConstant(TrueV) && isAllOnesConstant(FalseV)));
+  }
+
   // Try some other optimizations before falling back to generic lowering.
-  if (SDValue V = lowerSelectToBinOp(Op.getNode(), DAG, Subtarget))
-    return V;
+  if (!IsXpaimyCNeg) {
+    if (SDValue V = lowerSelectToBinOp(Op.getNode(), DAG, Subtarget))
+      return V;
+  }
 
   // When there is no cost for GPR <-> FPR, we can use zicond select for
   // floating value when CondV is int type
