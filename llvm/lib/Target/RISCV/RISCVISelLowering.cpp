@@ -10712,7 +10712,7 @@ SDValue RISCVTargetLowering::lowerSELECT(SDValue Op, SelectionDAG &DAG) const {
   // nodes to implement the SELECT. Performing the lowering here allows for
   // greater control over when CZERO_{EQZ/NEZ} are used vs another branchless
   // sequence or RISCVISD::SELECT_CC node (branch-based select).
-  if (Subtarget.hasStdExtZicond() && VT.isScalarInteger()) {
+  if (!IsXpaimyCNeg && Subtarget.hasCZEROLike() && VT.isScalarInteger()) {
 
     // (select c, t, 0) -> (czero_eqz t, c)
     if (isNullConstant(FalseV))
