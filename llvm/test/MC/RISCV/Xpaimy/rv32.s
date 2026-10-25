@@ -29,10 +29,14 @@ cnegi a0, a1, -1
 # CHECK: cnegi a0, a1, -1 # encoding: [0x0b,0xe5,0xf5,0xff]
 add.xu a0, a1, a2
 # CHECK: add.xu a0, a1, a2 # encoding: [0x2b,0x85,0xc5,0x00]
+add.xu a0, a1, -1
+# CHECK: add.xu a0, a1, -1 # encoding: [0x0b,0x85,0xf5,0xff]
 add.xc a0, a1, a2, 3
 # CHECK: add.xc a0, a1, a2, 3 # encoding: [0x2b,0x85,0xc5,0x86]
 add.sc a0, a1, a2, 3
 # CHECK: add.sc a0, a1, a2, 3 # encoding: [0x2b,0xb5,0xc5,0x86]
+add.sm a0, a1, a2
+# CHECK: add.sm a0, a1, a2 # encoding: [0x2b,0xb5,0xc5,0x80]
 c.ecall
 # CHECK: c.ecall # encoding: [0x02,0x80]
 

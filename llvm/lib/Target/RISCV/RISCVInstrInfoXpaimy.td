@@ -150,17 +150,36 @@ class MyRISCVSystemR<bits<7> funct7, bits<3> funct3, string mnemonic>
               (ins GPR:$rs1, GPR:$rs2), mnemonic, "$rd, $rs1, $rs2"> {
   let DecoderNamespace = "MyRISCVMicro";
 }
+class MyRISCVSystemI<bits<3> funct3, string mnemonic>
+    : RVInstI<funct3, OPC_CUSTOM_0, (outs GPR:$rd),
+              (ins GPR:$rs1, simm12_lo:$imm12), mnemonic,
+              "$rd, $rs1, $imm12"> {
+  let DecoderNamespace = "MyRISCVMicro";
+}
+class MyRISCVMachineR<bits<2> kind, bits<3> funct3, string mnemonic>
+    : RVInstR<0, funct3, OPC_CUSTOM_1, (outs GPR:$rd),
+              (ins GPR:$rs1, GPR:$rs2), mnemonic, "$rd, $rs1, $rs2"> {
+  let Inst{31-30} = kind;
+  let Inst{29-25} = 0;
+  let DecoderNamespace = "MyRISCVMicro";
+  let isAsmParserOnly = 1;
+}
 
 def ADD_XU : MyRISCVSystemR<0b0000000, 0b000, "add.xu">;
+def ADD_XUI : MyRISCVSystemI<0b000, "add.xu">;
 def SUB_XU : MyRISCVSystemR<0b0100000, 0b000, "sub.xu">;
 def ADD_UX : MyRISCVSystemR<0b0000000, 0b001, "add.ux">;
+def ADD_UXI : MyRISCVSystemI<0b001, "add.ux">;
 def SUB_UX : MyRISCVSystemR<0b0100000, 0b001, "sub.ux">;
 def ADD_XC : MyRISCVContextR<0b10, 0b000, "add.xc">;
 def SUB_XC : MyRISCVContextR<0b11, 0b000, "sub.xc">;
 def ADD_CX : MyRISCVContextR<0b10, 0b001, "add.cx">;
 def SUB_CX : MyRISCVContextR<0b11, 0b001, "sub.cx">;
 def ADD_SU : MyRISCVSystemR<0b0000000, 0b011, "add.su">;
+def ADD_SUI : MyRISCVSystemI<0b011, "add.su">;
 def SUB_SU : MyRISCVSystemR<0b0100000, 0b011, "sub.su">;
 def ADD_SC : MyRISCVContextR<0b10, 0b011, "add.sc">;
 def SUB_SC : MyRISCVContextR<0b11, 0b011, "sub.sc">;
+def ADD_SM : MyRISCVMachineR<0b10, 0b011, "add.sm">;
+def SUB_SM : MyRISCVMachineR<0b11, 0b011, "sub.sm">;
 }
