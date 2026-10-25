@@ -17717,6 +17717,70 @@ static SDValue combineNarrowableShiftedLoad(SDNode *N, SelectionDAG &DAG) {
                      DAG.getShiftAmountConstant(ShiftAmt, VT, DL));
 }
 
+static SDValue combineXpaimyExtract(SDNode *N, SelectionDAG &DAG,
+                                    const RISCVSubtarget &Subtarget) {
+  if (!Subtarget.hasVendorXpaimy() || Subtarget.is64Bit() ||
+      N->getValueType(0) != MVT::i32)
+    return SDValue();
+
+  SDValue Shifted = N->getOperand(0);
+  auto *Mask = dyn_cast<ConstantSDNode>(N->getOperand(1));
+  if (!Mask) {
+    Shifted = N->getOperand(1);
+    Mask = dyn_cast<ConstantSDNode>(N->getOperand(0));
+  }
+  if (!Mask || Shifted.getOpcode() != ISD::SRL)
+    return SDValue();
+
+  APInt MaskValue = Mask->getAPIntValue();
+  if (!MaskValue.isMask())
+    return SDValue();
+  unsigned Width = MaskValue.countr_one();
+  if (Width == 0 || Width == 32)
+    return SDValue();
+
+  auto *Shift = dyn_cast<ConstantSDNode>(Shifted.getOperand(1));
+  if (!Shift || Shift->getZExtValue() >= 32)
+    return SDValue();
+
+  SDLoc DL(N);
+  SDValue Ops[] = {
+      Shifted.getOperand(0),
+      DAG.getTargetConstant(Shift->getZExtValue(), DL, MVT::i32),
+      DAG.getTargetConstant(Width, DL, MVT::i32),
+  };
+  return DAG.getNode(RISCVISD::EXTRUI, DL, MVT::i32, Ops);
+}
+
+static SDValue combineXpaimySignedExtract(SDNode *N, SelectionDAG &DAG,
+                                          const RISCVSubtarget &Subtarget) {
+  if (!Subtarget.hasVendorXpaimy() || Subtarget.is64Bit() ||
+      N->getValueType(0) != MVT::i32)
+    return SDValue();
+
+  SDValue Shifted = N->getOperand(0);
+  auto *RightShift = dyn_cast<ConstantSDNode>(N->getOperand(1));
+  if (!RightShift || Shifted.getOpcode() != ISD::SHL)
+    return SDValue();
+
+  auto *LeftShift = dyn_cast<ConstantSDNode>(Shifted.getOperand(1));
+  if (!LeftShift)
+    return SDValue();
+
+  uint64_t Left = LeftShift->getZExtValue();
+  uint64_t Right = RightShift->getZExtValue();
+  if (Left > Right || Right >= 32)
+    return SDValue();
+
+  SDLoc DL(N);
+  SDValue Ops[] = {
+      Shifted.getOperand(0),
+      DAG.getTargetConstant(Right - Left, DL, MVT::i32),
+      DAG.getTargetConstant(32 - Right, DL, MVT::i32),
+  };
+  return DAG.getNode(RISCVISD::EXTRSI, DL, MVT::i32, Ops);
+}
+
 // Combines two comparison operation and logic operation to one selection
 // operation(min, max) and logic operation. Returns new constructed Node if
 // conditions for optimization are satisfied.
@@ -17725,6 +17789,9 @@ static SDValue performANDCombine(SDNode *N,
                                  const RISCVSubtarget &Subtarget) {
   SelectionDAG &DAG = DCI.DAG;
   SDValue N0 = N->getOperand(0);
+
+  if (SDValue V = combineXpaimyExtract(N, DAG, Subtarget))
+    return V;
 
   // Pre-promote (i32 (and (srl X, Y), 1)) on RV64 with Zbs without zero
   // extending X. This is safe since we only need the LSB after the shift and
@@ -23130,6 +23197,8 @@ SDValue RISCVTargetLowering::PerformDAGCombine(SDNode *N,
     break;
   }
   case ISD::SRA:
+    if (SDValue V = combineXpaimySignedExtract(N, DAG, Subtarget))
+      return V;
     if (SDValue V = performSRACombine(N, DAG, Subtarget))
       return V;
     [[fallthrough]];

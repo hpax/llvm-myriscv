@@ -69,6 +69,14 @@ class MyRISCVExtend<bits<2> kind, string mnemonic>
 }
 }
 
+def SDTMyRISCVExtractI : SDTypeProfile<1, 3, [
+  SDTCisVT<0, i32>, SDTCisSameAs<0, 1>,
+  SDTCisVT<2, i32>, SDTCisVT<3, i32>
+]>;
+def riscv_extrui : RVSDNode<"EXTRUI", SDTMyRISCVExtractI>;
+def riscv_extrsi : RVSDNode<"EXTRSI", SDTMyRISCVExtractI>;
+def txpaimy_uimm5 : RISCVOp, TImmLeaf<XLenVT, [{ return isUInt<5>(Imm); }]>;
+
 let Predicates = [HasVendorXpaimy], AddedComplexity = 1 in {
 def SH1SUB : MyRISCVStdALURR<0b0110000, 0b010, "sh1sub">;
 def SH2SUB : MyRISCVStdALURR<0b0110000, 0b100, "sh2sub">;
@@ -132,6 +140,24 @@ def : Pat<(sub (shl GPR:$rs1, (i32 2)), GPR:$rs2),
           (SH2SUB GPR:$rs1, GPR:$rs2)>;
 def : Pat<(sub (shl GPR:$rs1, (i32 3)), GPR:$rs2),
           (SH3SUB GPR:$rs1, GPR:$rs2)>;
+
+let Predicates = [IsRV32] in {
+def : Pat<(riscv_extrui GPR:$rs1, txpaimy_uimm5:$shift,
+                          txpaimy_uimm5:$width),
+          (EXTRUI GPR:$rs1, $shift, $width)>;
+def : Pat<(riscv_extrsi GPR:$rs1, txpaimy_uimm5:$shift,
+                          txpaimy_uimm5:$width),
+          (EXTRSI GPR:$rs1, $shift, $width)>;
+def : Pat<(sra (shl GPR:$rs1, uimmlog2xlen:$shift),
+                uimmlog2xlen:$shift),
+          (EXTRSI GPR:$rs1, 0, (ImmSubFromXLen $shift))>;
+def : Pat<(sra (shl GPR:$rs1, (sub (i32 0), GPR:$rs2)),
+                (sub (i32 0), GPR:$rs2)),
+          (SEXT GPR:$rs1, GPR:$rs2)>;
+def : Pat<(sra (shl GPR:$rs1, (sub (i32 32), GPR:$rs2)),
+                (sub (i32 32), GPR:$rs2)),
+          (SEXT GPR:$rs1, GPR:$rs2)>;
+}
 
 // Select the compare directly: deriving an unsigned comparison from the sign
 // of a subtraction would be incorrect when that subtraction wraps.
