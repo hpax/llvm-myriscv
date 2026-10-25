@@ -85,12 +85,12 @@ def SLOI  : MyRISCVStdShift<0b10000, 0b001, "sloi">;
 def SROI  : MyRISCVStdShift<0b10000, 0b101, "sroi">;
 def SRCSI : MyRISCVStdShift<0b11000, 0b101, "srcsi">;
 
-def SGE  : MyRISCVStdALURR<0b0000010, 0b010, "sge">;
-def SEQ  : MyRISCVStdALURR<0b0000001, 0b010, "seq">;
-def SNE  : MyRISCVStdALURR<0b0000011, 0b010, "sne">;
-def SGEU : MyRISCVStdALURR<0b0000010, 0b011, "sgeu">;
-def SAEQZ : MyRISCVStdALURR<0b0000001, 0b011, "saeqz">;
-def SANEZ : MyRISCVStdALURR<0b0000011, 0b011, "sanez">;
+def SGE  : MyRISCVStdALURR<0b1000000, 0b010, "sge">;
+def SEQ  : MyRISCVStdALURR<0b0100000, 0b010, "seq">;
+def SNE  : MyRISCVStdALURR<0b1100000, 0b010, "sne">;
+def SGEU : MyRISCVStdALURR<0b1000000, 0b011, "sgeu">;
+def SAEQZ : MyRISCVStdALURR<0b0100000, 0b011, "saeqz">;
+def SANEZ : MyRISCVStdALURR<0b1100000, 0b011, "sanez">;
 
 def BAEQZ : MyRISCVBranch<0b010, "baeqz">;
 def BANEZ : MyRISCVBranch<0b011, "banez">;
