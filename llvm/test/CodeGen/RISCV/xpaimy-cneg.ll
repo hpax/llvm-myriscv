@@ -1,5 +1,6 @@
 ; Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
-; RUN: llc -mtriple=riscv32 -mattr=+xpaimy -verify-machineinstrs < %s | FileCheck %s
+; RUN: llc -mtriple=riscv32 -mattr=+xpaimy -verify-machineinstrs < %s | FileCheck %s --check-prefixes=CHECK,NO-ZBA
+; RUN: llc -mtriple=riscv32 -mcpu=myriscv -verify-machineinstrs < %s | FileCheck %s --check-prefixes=CHECK,MYRISCV
 
 ; C: dividend < 0 ? -dividend : dividend
 define i32 @signed_dividend_abs(i32 %dividend) {
@@ -50,8 +51,9 @@ define i32 @udiv_quotient_correction(i32 %quotient, i32 %remainder,
                                       i32 %divisor) {
 ; CHECK-LABEL: udiv_quotient_correction:
 ; CHECK:       sgeu [[BIT:a[0-7]]], a1, a2
-; CHECK:       slli a0, a0, 1
-; CHECK:       or a0, a0, [[BIT]]
+; NO-ZBA:      slli a0, a0, 1
+; NO-ZBA-NEXT: or a0, a0, [[BIT]]
+; MYRISCV:     sh1add a0, a0, [[BIT]]
 ; CHECK-NEXT:  ret
   %fits = icmp uge i32 %remainder, %divisor
   %bit = zext i1 %fits to i32
