@@ -7,7 +7,7 @@ set -euo pipefail
 
 REPOSITORY_DIR="${REPOSITORY_DIR:-$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
 BUILD_DIR="${BUILD_DIR:-$(pwd)/build}"
-INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/myriscv}"
+INSTALL_PREFIX="${INSTALL_PREFIX:-/opt/riscv/my}"
 BUILD_TYPE="${BUILD_TYPE:-Release}"
 JOBS="${JOBS:-16}"
 
