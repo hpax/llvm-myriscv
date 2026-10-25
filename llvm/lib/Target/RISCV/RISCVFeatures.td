@@ -1257,9 +1257,15 @@ def HasStdExtY : Predicate<"Subtarget->hasStdExtY()">,
 // Xpasmy covers the register-context microcontroller system instructions.
 def FeatureVendorXpaimy
     : RISCVExtension<1, 0, "MyRISCV nonprivileged extensions">;
+def HasVendorXpaimy : Predicate<"Subtarget->hasVendorXpaimy()">,
+                      AssemblerPredicate<(all_of FeatureVendorXpaimy),
+                                         "'Xpaimy' (MyRISCV nonprivileged extensions)">;
 def FeatureVendorXpasmy
     : RISCVExtension<1, 0,
                      "MyRISCV microcontroller system extensions">;
+def HasVendorXpasmy : Predicate<"Subtarget->hasVendorXpasmy()">,
+                      AssemblerPredicate<(all_of FeatureVendorXpasmy),
+                                         "'Xpasmy' (MyRISCV microcontroller system extensions)">;
 def FeatureVendorXpaindcsr
     : RISCVExtension<1, 0, "MyRISCV indirect CSR access">;
 

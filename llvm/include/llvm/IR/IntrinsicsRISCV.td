@@ -91,6 +91,11 @@ let TargetPrefix = "riscv" in {
   // Zbkx
   def int_riscv_xperm4  : RISCVBitManipGPRGPRIntrinsics;
   def int_riscv_xperm8  : RISCVBitManipGPRGPRIntrinsics;
+
+  // MyRISCV Xpaimy.
+  def int_riscv_myriscv_clo : RISCVBitManipGPRIntrinsics;
+  def int_riscv_myriscv_cto : RISCVBitManipGPRIntrinsics;
+  def int_riscv_myriscv_cpopz : RISCVBitManipGPRIntrinsics;
 } // TargetPrefix = "riscv"
 
 //===----------------------------------------------------------------------===//

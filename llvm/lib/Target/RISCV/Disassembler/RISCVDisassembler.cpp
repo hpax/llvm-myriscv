@@ -4,6 +4,8 @@
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
+// Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
+//
 //===----------------------------------------------------------------------===//
 //
 // This file implements the RISCVDisassembler class.
@@ -538,6 +540,10 @@ static constexpr FeatureBitset XAIFGroup = {RISCV::FeatureVendorXAIFET};
 
 static constexpr DecoderListEntry DecoderList32[]{
     // Vendor Extensions
+    {DecoderTableMyRISCV32, {RISCV::FeatureVendorXpaimy},
+     "MyRISCV nonprivileged extensions"},
+    {DecoderTableMyRISCVMicro32, {RISCV::FeatureVendorXpasmy},
+     "MyRISCV microcontroller system extensions"},
     {DecoderTableXCV32, XCVFeatureGroup, "CORE-V extensions"},
     {DecoderTableXqci32, XqciFeatureGroup, "Qualcomm uC Extensions"},
     {DecoderTableXVentana32,
@@ -596,6 +602,8 @@ DecodeStatus RISCVDisassembler::getInstruction32(MCInst &MI, uint64_t &Size,
 
 static constexpr DecoderListEntry DecoderList16[]{
     // Vendor Extensions
+    {DecoderTableMyRISCV16, {RISCV::FeatureVendorXpaimy},
+     "MyRISCV nonprivileged extensions"},
     {DecoderTableXqci16, XqciFeatureGroup, "Qualcomm uC 16-bit"},
     {DecoderTableXqccmp16,
      {RISCV::FeatureVendorXqccmp},
