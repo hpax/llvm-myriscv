@@ -29,6 +29,11 @@ def clz_64 : RISCVBuiltin<"unsigned int(uint64_t)", "zbb|xtheadbb,64bit">;
 def ctz_32 : RISCVBuiltin<"unsigned int(unsigned int)", "zbb">;
 def ctz_64 : RISCVBuiltin<"unsigned int(uint64_t)", "zbb,64bit">;
 
+// MyRISCV Xpaimy extension.
+def myriscv_clo_32 : RISCVBuiltin<"unsigned int(unsigned int)", "xpaimy">;
+def myriscv_cto_32 : RISCVBuiltin<"unsigned int(unsigned int)", "xpaimy">;
+def myriscv_cpopz_32 : RISCVBuiltin<"unsigned int(unsigned int)", "xpaimy">;
+
 //===----------------------------------------------------------------------===//
 // Zbc or Zbkc extension.
 //===----------------------------------------------------------------------===//

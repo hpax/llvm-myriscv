@@ -4,6 +4,8 @@
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
+// Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
+//
 //===----------------------------------------------------------------------===//
 //
 // This contains code to emit Builtin calls as LLVM code.
@@ -1480,6 +1482,16 @@ Value *CodeGenFunction::EmitRISCVBuiltinExpr(unsigned BuiltinID,
       Result =
           Builder.CreateIntCast(Result, ResultType, /*isSigned*/ false, "cast");
     return Result;
+  }
+  case RISCV::BI__builtin_riscv_myriscv_clo_32:
+  case RISCV::BI__builtin_riscv_myriscv_cto_32:
+  case RISCV::BI__builtin_riscv_myriscv_cpopz_32: {
+    Intrinsic::ID ID = BuiltinID == RISCV::BI__builtin_riscv_myriscv_clo_32
+                           ? Intrinsic::riscv_myriscv_clo
+                       : BuiltinID == RISCV::BI__builtin_riscv_myriscv_cto_32
+                           ? Intrinsic::riscv_myriscv_cto
+                           : Intrinsic::riscv_myriscv_cpopz;
+    return Builder.CreateIntrinsic(ID, Ops[0]->getType(), Ops);
   }
 
   // Zihintntl
