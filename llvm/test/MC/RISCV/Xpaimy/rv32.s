@@ -1,3 +1,5 @@
+# Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
+#
 # RUN: llvm-mc -triple riscv32 -mattr=+xpaimy,+xpasmy -show-encoding < %s \
 # RUN:   | FileCheck %s
 # RUN: llvm-mc -triple riscv32 -mattr=+xpaimy,+xpasmy -filetype=obj < %s \
@@ -52,6 +54,39 @@ add.sm a0, a1, a2
 c.ecall
 # CHECK: c.ecall # encoding: [0x02,0x80]
 
+slo a0, a1, 3
+# CHECK: sloi a0, a1, 3 # encoding: [0x13,0x95,0x35,0x80]
+sro a0, a1, 3
+# CHECK: sroi a0, a1, 3 # encoding: [0x13,0xd5,0x35,0x80]
+srcs a0, a1, 3
+# CHECK: srcsi a0, a1, 3 # encoding: [0x13,0xd5,0x35,0xc0]
+extru a0, a1, 3, 4
+# CHECK: extrui a0, a1, 3, 4 # encoding: [0x0b,0xd5,0x35,0x08]
+extrs a0, a1, 3, 4
+# CHECK: extrsi a0, a1, 3, 4 # encoding: [0x0b,0xd5,0x35,0x48]
+extro a0, a1, 3, 4
+# CHECK: extroi a0, a1, 3, 4 # encoding: [0x0b,0xd5,0x35,0x88]
+extrcs a0, a1, 3, 4
+# CHECK: extrcsi a0, a1, 3, 4 # encoding: [0x0b,0xd5,0x35,0xc8]
+zext a0, a1, 4
+# CHECK: extrui a0, a1, 0, 4 # encoding: [0x0b,0xd5,0x05,0x08]
+sext a0, a1, 4
+# CHECK: extrsi a0, a1, 0, 4 # encoding: [0x0b,0xd5,0x05,0x48]
+oext a0, a1, 4
+# CHECK: extroi a0, a1, 0, 4 # encoding: [0x0b,0xd5,0x05,0x88]
+csext a0, a1, 4
+# CHECK: extrcsi a0, a1, 0, 4 # encoding: [0x0b,0xd5,0x05,0xc8]
+zexti a0, a1, 4
+# CHECK: extrui a0, a1, 0, 4 # encoding: [0x0b,0xd5,0x05,0x08]
+sexti a0, a1, 4
+# CHECK: extrsi a0, a1, 0, 4 # encoding: [0x0b,0xd5,0x05,0x48]
+oexti a0, a1, 4
+# CHECK: extroi a0, a1, 0, 4 # encoding: [0x0b,0xd5,0x05,0x88]
+csexti a0, a1, 4
+# CHECK: extrcsi a0, a1, 0, 4 # encoding: [0x0b,0xd5,0x05,0xc8]
+cneg a0, a1, -1
+# CHECK: cnegi a0, a1, -1 # encoding: [0x0b,0xe5,0xf5,0xff]
+
 # DIS: sh1sub a0, a1, a2
 # DIS: clo a0, a1
 # DIS: seq a0, a1, a2
@@ -67,3 +102,15 @@ c.ecall
 # DIS: sub.cx a0, a1, a2, 0x3
 # DIS: add.sc a0, a1, a2, 0x3
 # DIS: c.ecall
+# DIS: sloi a0, a1, 0x3
+# DIS: sroi a0, a1, 0x3
+# DIS: srcsi a0, a1, 0x3
+# DIS: extrui a0, a1, 0x3, 0x4
+# DIS: extrsi a0, a1, 0x3, 0x4
+# DIS: extroi a0, a1, 0x3, 0x4
+# DIS: extrcsi a0, a1, 0x3, 0x4
+# DIS: extrui a0, a1, 0x0, 0x4
+# DIS: extrsi a0, a1, 0x0, 0x4
+# DIS: extroi a0, a1, 0x0, 0x4
+# DIS: extrcsi a0, a1, 0x0, 0x4
+# DIS: cnegi a0, a1, -0x1
