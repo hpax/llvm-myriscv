@@ -167,6 +167,12 @@ def : Pat<(sub (shl GPR:$rs1, (i32 3)), GPR:$rs2),
           (SH3SUB GPR:$rs1, GPR:$rs2)>;
 def : Pat<(XLenVT (not (shl -1, GPR:$rs2))),
           (SLO (XLenVT X0), GPR:$rs2)>;
+def : Pat<(riscv_brcc (XLenVT (and GPR:$rs1, GPR:$rs2)), 0, SETEQ,
+                       bb:$imm12),
+          (BAEQZ GPR:$rs1, GPR:$rs2, bare_simm13_lsb0_bb:$imm12)>;
+def : Pat<(riscv_brcc (XLenVT (and GPR:$rs1, GPR:$rs2)), 0, SETNE,
+                       bb:$imm12),
+          (BANEZ GPR:$rs1, GPR:$rs2, bare_simm13_lsb0_bb:$imm12)>;
 
 let Predicates = [IsRV32] in {
 def : Pat<(riscv_extrui GPR:$rs1, txpaimy_uimm5:$shift,
