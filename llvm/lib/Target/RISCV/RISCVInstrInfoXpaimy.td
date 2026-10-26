@@ -133,6 +133,19 @@ def CNEGI : MyRISCVCustomI<0b110, "cnegi">;
 def SHADDPC : MyRISCVShAddPc<0b0010000, "shaddpc">;
 def SHSUBPC : MyRISCVShAddPc<0b0110000, "shsubpc">;
 
+defm LR_B  : LR_r_aq_rl<0b000, "lr.b">,
+             Sched<[WriteAtomicLDW, ReadAtomicLDW]>;
+defm LR_H  : LR_r_aq_rl<0b001, "lr.h">,
+             Sched<[WriteAtomicLDW, ReadAtomicLDW]>;
+defm LR_BU : LR_r_aq_rl<0b100, "lr.bu">,
+             Sched<[WriteAtomicLDW, ReadAtomicLDW]>;
+defm LR_HU : LR_r_aq_rl<0b101, "lr.hu">,
+             Sched<[WriteAtomicLDW, ReadAtomicLDW]>;
+defm SC_B  : SC_r_aq_rl<0b000, "sc.b">,
+             Sched<[WriteAtomicSTW, ReadAtomicSTW, ReadAtomicSTW]>;
+defm SC_H  : SC_r_aq_rl<0b001, "sc.h">,
+             Sched<[WriteAtomicSTW, ReadAtomicSTW, ReadAtomicSTW]>;
+
 def C_ECALL : RVInst16CR<0b1000, OPC_C2, (outs), (ins), "c.ecall", "">,
               Sched<[]> {
   let rs1 = 0;
