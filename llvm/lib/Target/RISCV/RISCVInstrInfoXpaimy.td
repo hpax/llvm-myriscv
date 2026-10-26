@@ -86,7 +86,7 @@ def riscv_extrui : RVSDNode<"EXTRUI", SDTMyRISCVExtractI>;
 def riscv_extrsi : RVSDNode<"EXTRSI", SDTMyRISCVExtractI>;
 def txpaimy_uimm5 : RISCVOp, TImmLeaf<XLenVT, [{ return isUInt<5>(Imm); }]>;
 
-let Predicates = [HasVendorXpaimy], AddedComplexity = 1 in {
+let Predicates = [HasVendorXpaimy] in {
 def SH1SUB : MyRISCVStdALURR<0b0110000, 0b010, "sh1sub">;
 def SH2SUB : MyRISCVStdALURR<0b0110000, 0b100, "sh2sub">;
 def SH3SUB : MyRISCVStdALURR<0b0110000, 0b110, "sh3sub">;
@@ -101,6 +101,12 @@ def SRCS : MyRISCVStdALURR<0b1100000, 0b101, "srcs">;
 def SLOI  : MyRISCVStdShift<0b10000, 0b001, "sloi">;
 def SROI  : MyRISCVStdShift<0b10000, 0b101, "sroi">;
 def SRCSI : MyRISCVStdShift<0b11000, 0b101, "srcsi">;
+def : InstAlias<"slo $rd, $rs1, $shift",
+                (SLOI GPR:$rd, GPR:$rs1, uimmlog2xlen:$shift), 0>;
+def : InstAlias<"sro $rd, $rs1, $shift",
+                (SROI GPR:$rd, GPR:$rs1, uimmlog2xlen:$shift), 0>;
+def : InstAlias<"srcs $rd, $rs1, $shift",
+                (SRCSI GPR:$rd, GPR:$rs1, uimmlog2xlen:$shift), 0>;
 
 def SGE  : MyRISCVStdALURR<0b1000000, 0b010, "sge">;
 def SEQ  : MyRISCVStdALURR<0b0100000, 0b010, "seq">;
@@ -120,15 +126,45 @@ def EXTRUI  : MyRISCVExtractI<0b00, "extrui">;
 def EXTRSI  : MyRISCVExtractI<0b01, "extrsi">;
 def EXTROI  : MyRISCVExtractI<0b10, "extroi">;
 def EXTRCSI : MyRISCVExtractI<0b11, "extrcsi">;
+def : InstAlias<"extru $rd, $rs1, $shift, $width",
+                (EXTRUI GPR:$rd, GPR:$rs1, uimmlog2xlen:$shift,
+                 uimm5:$width), 0>;
+def : InstAlias<"extrs $rd, $rs1, $shift, $width",
+                (EXTRSI GPR:$rd, GPR:$rs1, uimmlog2xlen:$shift,
+                 uimm5:$width), 0>;
+def : InstAlias<"extro $rd, $rs1, $shift, $width",
+                (EXTROI GPR:$rd, GPR:$rs1, uimmlog2xlen:$shift,
+                 uimm5:$width), 0>;
+def : InstAlias<"extrcs $rd, $rs1, $shift, $width",
+                (EXTRCSI GPR:$rd, GPR:$rs1, uimmlog2xlen:$shift,
+                 uimm5:$width), 0>;
 
 def ZEXT  : MyRISCVExtend<0b00, "zext">;
 def SEXT  : MyRISCVExtend<0b01, "sext">;
 def OEXT  : MyRISCVExtend<0b10, "oext">;
 def CSEXT : MyRISCVExtend<0b11, "csext">;
+def : InstAlias<"zexti $rd, $rs1, $width",
+                (EXTRUI GPR:$rd, GPR:$rs1, 0, uimm5:$width), 0>;
+def : InstAlias<"sexti $rd, $rs1, $width",
+                (EXTRSI GPR:$rd, GPR:$rs1, 0, uimm5:$width), 0>;
+def : InstAlias<"oexti $rd, $rs1, $width",
+                (EXTROI GPR:$rd, GPR:$rs1, 0, uimm5:$width), 0>;
+def : InstAlias<"csexti $rd, $rs1, $width",
+                (EXTRCSI GPR:$rd, GPR:$rs1, 0, uimm5:$width), 0>;
+def : InstAlias<"zext $rd, $rs1, $width",
+                (EXTRUI GPR:$rd, GPR:$rs1, 0, uimm5:$width), 0>;
+def : InstAlias<"sext $rd, $rs1, $width",
+                (EXTRSI GPR:$rd, GPR:$rs1, 0, uimm5:$width), 0>;
+def : InstAlias<"oext $rd, $rs1, $width",
+                (EXTROI GPR:$rd, GPR:$rs1, 0, uimm5:$width), 0>;
+def : InstAlias<"csext $rd, $rs1, $width",
+                (EXTRCSI GPR:$rd, GPR:$rs1, 0, uimm5:$width), 0>;
 
 def CNEG  : MyRISCVCustomR<0b0000000, 0b110, "cneg">;
 def CNEGN : MyRISCVCustomR<0b0100000, 0b110, "cnegn">;
 def CNEGI : MyRISCVCustomI<0b110, "cnegi">;
+def : InstAlias<"cneg $rd, $rs1, $imm12",
+                (CNEGI GPR:$rd, GPR:$rs1, simm12_lo:$imm12), 0>;
 
 def SHADDPC : MyRISCVShAddPc<0b0010000, "shaddpc">;
 def SHSUBPC : MyRISCVShAddPc<0b0110000, "shsubpc">;
