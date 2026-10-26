@@ -165,6 +165,8 @@ def : Pat<(sub (shl GPR:$rs1, (i32 2)), GPR:$rs2),
           (SH2SUB GPR:$rs1, GPR:$rs2)>;
 def : Pat<(sub (shl GPR:$rs1, (i32 3)), GPR:$rs2),
           (SH3SUB GPR:$rs1, GPR:$rs2)>;
+// Prefer SLO to the equivalent Zbs BSET/ADDI sequence.
+let AddedComplexity = 10 in
 def : Pat<(XLenVT (not (shl -1, GPR:$rs2))),
           (SLO (XLenVT X0), GPR:$rs2)>;
 def : Pat<(riscv_brcc (XLenVT (and GPR:$rs1, GPR:$rs2)), 0, SETEQ,
