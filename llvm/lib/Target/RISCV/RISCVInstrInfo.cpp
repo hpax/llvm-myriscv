@@ -1310,6 +1310,10 @@ unsigned RISCVCC::getInverseBranchOpcode(unsigned BCC) {
     return RISCV::BEQ;
   case RISCV::BNEI:
     return RISCV::BEQI;
+  case RISCV::BAEQZ:
+    return RISCV::BANEZ;
+  case RISCV::BANEZ:
+    return RISCV::BAEQZ;
   case RISCV::BLT:
     return RISCV::BGE;
   case RISCV::BGE:
@@ -1772,6 +1776,8 @@ bool RISCVInstrInfo::isBranchOffsetInRange(unsigned BranchOp,
     return isInt<11>(BrOffset);
   case RISCV::BEQ:
   case RISCV::BNE:
+  case RISCV::BAEQZ:
+  case RISCV::BANEZ:
   case RISCV::BLT:
   case RISCV::BGE:
   case RISCV::BLTU:
