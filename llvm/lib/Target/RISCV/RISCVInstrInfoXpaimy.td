@@ -40,6 +40,15 @@ class MyRISCVCustomI<bits<3> funct3, string mnemonic>
               "$rd, $rs1, $imm12"> {
   let DecoderNamespace = "MyRISCV";
 }
+class MyRISCVShAddPc<bits<7> funct7, string mnemonic>
+    : RVInstI<0b001, OPC_CUSTOM_0, (outs GPR:$rd),
+              (ins GPR:$rs1, uimm2:$shift), mnemonic, "$rd, $rs1, $shift"> {
+  bits<2> shift;
+  let Inst{31-25} = funct7;
+  let Inst{24-22} = 0;
+  let Inst{21-20} = shift;
+  let DecoderNamespace = "MyRISCV";
+}
 
 class MyRISCVExtractR<bits<2> kind, string mnemonic>
     : RVInstR<0, 0b101, OPC_CUSTOM_1, (outs GPR:$rd),
@@ -120,6 +129,9 @@ def CSEXT : MyRISCVExtend<0b11, "csext">;
 def CNEG  : MyRISCVCustomR<0b0000000, 0b110, "cneg">;
 def CNEGN : MyRISCVCustomR<0b0100000, 0b110, "cnegn">;
 def CNEGI : MyRISCVCustomI<0b110, "cnegi">;
+
+def SHADDPC : MyRISCVShAddPc<0b0010000, "shaddpc">;
+def SHSUBPC : MyRISCVShAddPc<0b0110000, "shsubpc">;
 
 def C_ECALL : RVInst16CR<0b1000, OPC_C2, (outs), (ins), "c.ecall", "">,
               Sched<[]> {
@@ -237,13 +249,13 @@ class MyRISCVMachineR<bits<2> kind, bits<3> funct3, string mnemonic>
 def ADD_XU : MyRISCVSystemR<0b0000000, 0b000, "add.xu">;
 def ADD_XUI : MyRISCVSystemI<0b000, "add.xu">;
 def SUB_XU : MyRISCVSystemR<0b0100000, 0b000, "sub.xu">;
-def ADD_UX : MyRISCVSystemR<0b0000000, 0b001, "add.ux">;
-def ADD_UXI : MyRISCVSystemI<0b001, "add.ux">;
-def SUB_UX : MyRISCVSystemR<0b0100000, 0b001, "sub.ux">;
+def ADD_UX : MyRISCVSystemR<0b0000000, 0b010, "add.ux">;
+def ADD_UXI : MyRISCVSystemI<0b010, "add.ux">;
+def SUB_UX : MyRISCVSystemR<0b0100000, 0b010, "sub.ux">;
 def ADD_XC : MyRISCVContextR<0b10, 0b000, "add.xc">;
 def SUB_XC : MyRISCVContextR<0b11, 0b000, "sub.xc">;
-def ADD_CX : MyRISCVContextR<0b10, 0b001, "add.cx">;
-def SUB_CX : MyRISCVContextR<0b11, 0b001, "sub.cx">;
+def ADD_CX : MyRISCVContextR<0b10, 0b010, "add.cx">;
+def SUB_CX : MyRISCVContextR<0b11, 0b010, "sub.cx">;
 def ADD_SU : MyRISCVSystemR<0b0000000, 0b011, "add.su">;
 def ADD_SUI : MyRISCVSystemI<0b011, "add.su">;
 def SUB_SU : MyRISCVSystemR<0b0100000, 0b011, "sub.su">;
