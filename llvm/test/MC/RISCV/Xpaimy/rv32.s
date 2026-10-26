@@ -10,7 +10,7 @@ clo a0, a1
 sloi a0, a1, 3
 # CHECK: sloi a0, a1, 3 # encoding: [0x13,0x95,0x35,0x80]
 seq a0, a1, a2
-# CHECK: seq a0, a1, a2 # encoding: [0x33,0xa5,0xc5,0x02]
+# CHECK: seq a0, a1, a2 # encoding: [0x33,0xa5,0xc5,0x40]
 baeqz a0, a1, 8
 # CHECK: baeqz a0, a1, 8 # encoding: [0x63,0x24,0xb5,0x00]
 extru a0, a1, a2, 4
@@ -27,12 +27,24 @@ cneg a0, a1, a2
 # CHECK: cneg a0, a1, a2 # encoding: [0x2b,0xe5,0xc5,0x00]
 cnegi a0, a1, -1
 # CHECK: cnegi a0, a1, -1 # encoding: [0x0b,0xe5,0xf5,0xff]
+shaddpc a0, a1, 2
+# CHECK: shaddpc a0, a1, 2 # encoding: [0x0b,0x95,0x25,0x20]
+shsubpc a0, a1, 2
+# CHECK: shsubpc a0, a1, 2 # encoding: [0x0b,0x95,0x25,0x60]
 add.xu a0, a1, a2
 # CHECK: add.xu a0, a1, a2 # encoding: [0x2b,0x85,0xc5,0x00]
 add.xu a0, a1, -1
 # CHECK: add.xu a0, a1, -1 # encoding: [0x0b,0x85,0xf5,0xff]
 add.xc a0, a1, a2, 3
 # CHECK: add.xc a0, a1, a2, 3 # encoding: [0x2b,0x85,0xc5,0x86]
+add.ux a0, a1, a2
+# CHECK: add.ux a0, a1, a2 # encoding: [0x2b,0xa5,0xc5,0x00]
+sub.ux a0, a1, a2
+# CHECK: sub.ux a0, a1, a2 # encoding: [0x2b,0xa5,0xc5,0x40]
+add.cx a0, a1, a2, 3
+# CHECK: add.cx a0, a1, a2, 3 # encoding: [0x2b,0xa5,0xc5,0x86]
+sub.cx a0, a1, a2, 3
+# CHECK: sub.cx a0, a1, a2, 3 # encoding: [0x2b,0xa5,0xc5,0xc6]
 add.sc a0, a1, a2, 3
 # CHECK: add.sc a0, a1, a2, 3 # encoding: [0x2b,0xb5,0xc5,0x86]
 add.sm a0, a1, a2
@@ -46,6 +58,12 @@ c.ecall
 # DIS: baeqz a0, a1
 # DIS: extru a0, a1, a2, 0x4
 # DIS: extrui a0, a1, 0x3, 0x4
+# DIS: shaddpc a0, a1, 0x2
+# DIS: shsubpc a0, a1, 0x2
 # DIS: add.xc a0, a1, a2, 0x3
+# DIS: add.ux a0, a1, a2
+# DIS: sub.ux a0, a1, a2
+# DIS: add.cx a0, a1, a2, 0x3
+# DIS: sub.cx a0, a1, a2, 0x3
 # DIS: add.sc a0, a1, a2, 0x3
 # DIS: c.ecall
