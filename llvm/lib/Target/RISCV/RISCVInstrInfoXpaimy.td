@@ -165,6 +165,8 @@ def : Pat<(sub (shl GPR:$rs1, (i32 2)), GPR:$rs2),
           (SH2SUB GPR:$rs1, GPR:$rs2)>;
 def : Pat<(sub (shl GPR:$rs1, (i32 3)), GPR:$rs2),
           (SH3SUB GPR:$rs1, GPR:$rs2)>;
+def : Pat<(XLenVT (not (shl -1, GPR:$rs2))),
+          (SLO (XLenVT X0), GPR:$rs2)>;
 
 let Predicates = [IsRV32] in {
 def : Pat<(riscv_extrui GPR:$rs1, txpaimy_uimm5:$shift,
