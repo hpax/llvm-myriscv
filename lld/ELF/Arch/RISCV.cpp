@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+// Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
 
 #include "InputFiles.h"
 #include "OutputSections.h"
@@ -81,6 +82,7 @@ namespace {
 enum Op {
   ADDI = 0x13,
   AUIPC = 0x17,
+  CUSTOM3 = 0x7b,
   JALR = 0x67,
   LD = 0x3003,
   LUI = 0x37,
@@ -994,6 +996,36 @@ static void relaxHi20Lo12(Ctx &ctx, const InputSection &sec, size_t i,
   }
 }
 
+static bool hasXpaimy(Ctx &ctx);
+
+// Relax auipc+addi address materialization to MyRISCV lai.
+static bool relaxPcrelHi20(Ctx &ctx, const InputSection &sec, size_t i,
+                           uint64_t loc, const Relocation &r) {
+  ArrayRef<Relocation> relocs = sec.relocs();
+  if (r.expr != R_PC || i + 3 >= relocs.size() ||
+      relocs[i + 2].type != R_RISCV_PCREL_LO12_I ||
+      relocs[i + 2].offset != r.offset + 4 || !relaxable(relocs, i + 2) ||
+      r.offset + 8 > sec.content().size())
+    return false;
+
+  const uint64_t insnPair = read64le(sec.content().data() + r.offset);
+  const uint32_t auipc = insnPair;
+  const uint32_t addi = insnPair >> 32;
+  const uint32_t rd = extractBits(auipc, 11, 7);
+  if ((auipc & 0x7f) != AUIPC || (addi & 0x707f) != ADDI ||
+      rd != extractBits(addi, 11, 7) || rd != extractBits(addi, 19, 15))
+    return false;
+
+  const int64_t displace = r.sym->getVA(ctx, r.addend) - loc;
+  if (!isInt<21>(displace) || (displace & 1))
+    return false;
+
+  sec.relaxAux->relocTypes[i] = R_RISCV_JAL;
+  sec.relaxAux->relocTypes[i + 2] = R_RISCV_RELAX;
+  sec.relaxAux->writes.push_back(CUSTOM3 | rd << 7);
+  return true;
+}
+
 static bool relax(Ctx &ctx, int pass, InputSection &sec) {
   const uint64_t secAddr = sec.getVA();
   const MutableArrayRef<Relocation> relocs = sec.relocs();
@@ -1048,6 +1080,14 @@ static bool relax(Ctx &ctx, int pass, InputSection &sec) {
     case R_RISCV_LO12_S:
       if (relaxable(relocs, i))
         relaxHi20Lo12(ctx, sec, i, loc, r, remove);
+      break;
+    case R_RISCV_PCREL_HI20:
+      if (hasXpaimy(ctx) && relaxable(relocs, i))
+        relaxPcrelHi20(ctx, sec, i, loc, r);
+      break;
+    case R_RISCV_PCREL_LO12_I:
+      if (aux.relocTypes[i] == R_RISCV_RELAX)
+        remove = 4;
       break;
     case R_RISCV_TLSDESC_HI20:
       // For TLSDESC=>LE, we can use the short form if hi20 is zero.
@@ -1336,8 +1376,13 @@ void RISCV::finalizeRelax(int passes) const {
         uint64_t cur = rels[i].offset;
         do {
           rels[i].offset -= delta;
-          if (aux.relocTypes[i] != R_RISCV_NONE)
-            rels[i].type = aux.relocTypes[i];
+          RelType newType = aux.relocTypes[i];
+          if (newType != R_RISCV_NONE) {
+            if (newType == R_RISCV_RELAX &&
+                rels[i].type == R_RISCV_PCREL_LO12_I)
+              rels[i].expr = R_ABS;
+            rels[i].type = newType;
+          }
         } while (++i != e && rels[i].offset == cur);
         delta = aux.relocDeltas[i - 1];
       }
@@ -1367,6 +1412,15 @@ public:
   size_t size = 0;
 };
 } // namespace
+
+static bool hasXpaimy(Ctx &ctx) {
+  if (!ctx.in.riscvAttributes)
+    return false;
+  const auto &attrs =
+      static_cast<const RISCVAttributesSection &>(*ctx.in.riscvAttributes);
+  auto it = attrs.strAttr.find(RISCVAttrs::ARCH);
+  return it != attrs.strAttr.end() && it->second.contains("_xpaimy");
+}
 
 static void mergeArch(Ctx &ctx, RISCVISAUtils::OrderedExtensionMap &mergedExts,
                       unsigned &mergedXlen, const InputSectionBase *sec,
