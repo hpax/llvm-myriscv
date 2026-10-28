@@ -33,6 +33,8 @@ enum Fixups {
   fixup_riscv_pcrel_lo12_s,
   // 20-bit fixup for symbol references in the jal instruction
   fixup_riscv_jal,
+  // 21-bit fixup for symbol references in the lai instruction
+  fixup_riscv_lai,
   // 12-bit fixup for symbol references in the branch instructions
   fixup_riscv_branch,
   // 11-bit fixup for symbol references in the compressed jump instruction
