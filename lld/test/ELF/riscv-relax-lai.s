@@ -27,8 +27,7 @@
 # BASE-NEXT: nop
 
 # ODD:      <_start>:
-# ODD-NEXT: auipc a0, 0x0
-# ODD-NEXT: addi a0, a0, 0x9
+# ODD-NEXT: lai a0, 0x5
 
 #--- xpaimy.s
 .attribute arch, "rv32i2p1_xpaimy1p0"

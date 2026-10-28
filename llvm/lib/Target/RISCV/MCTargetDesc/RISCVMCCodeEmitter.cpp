@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+// Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
 //
 // This file implements the RISCVMCCodeEmitter class.
 //
@@ -108,6 +109,9 @@ public:
   uint64_t getImmOpValueZibi(const MCInst &MI, unsigned OpNo,
                              SmallVectorImpl<MCFixup> &Fixups,
                              const MCSubtargetInfo &STI) const;
+  uint64_t getImmOpValueLAI(const MCInst &MI, unsigned OpNo,
+                            SmallVectorImpl<MCFixup> &Fixups,
+                            const MCSubtargetInfo &STI) const;
 
   uint64_t getImmOpValue(const MCInst &MI, unsigned OpNo,
                          SmallVectorImpl<MCFixup> &Fixups,
@@ -145,6 +149,7 @@ static void addFixup(SmallVectorImpl<MCFixup> &Fixups, uint32_t Offset,
   case RISCV::fixup_riscv_pcrel_lo12_i:
   case RISCV::fixup_riscv_pcrel_lo12_s:
   case RISCV::fixup_riscv_jal:
+  case RISCV::fixup_riscv_lai:
   case RISCV::fixup_riscv_branch:
   case RISCV::fixup_riscv_rvc_jump:
   case RISCV::fixup_riscv_rvc_branch:
@@ -764,6 +769,18 @@ RISCVMCCodeEmitter::getImmOpValueZibi(const MCInst &MI, unsigned OpNo,
     return 0;
 
   return Res;
+}
+
+uint64_t
+RISCVMCCodeEmitter::getImmOpValueLAI(const MCInst &MI, unsigned OpNo,
+                                     SmallVectorImpl<MCFixup> &Fixups,
+                                     const MCSubtargetInfo &STI) const {
+  const MCOperand &MO = MI.getOperand(OpNo);
+  if (MO.isImm())
+    return MO.getImm();
+
+  addFixup(Fixups, 0, MO.getExpr(), RISCV::fixup_riscv_lai);
+  return 0;
 }
 
 uint64_t RISCVMCCodeEmitter::getImmOpValue(const MCInst &MI, unsigned OpNo,

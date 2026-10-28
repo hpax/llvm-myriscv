@@ -4,6 +4,8 @@
 # RUN:   | FileCheck %s
 # RUN: llvm-mc -triple riscv32 -mattr=+xpaimy,+xpasmy -filetype=obj < %s \
 # RUN:   | llvm-objdump -d --mattr=+xpaimy,+xpasmy - | FileCheck %s --check-prefix=DIS
+# RUN: llvm-mc -triple riscv32 -mattr=+xpaimy,+xpasmy -filetype=obj < %s \
+# RUN:   | llvm-readobj -r - | FileCheck %s --check-prefix=RELOC
 
 sh1sub a0, a1, a2
 # CHECK: sh1sub a0, a1, a2 # encoding: [0x33,0xa5,0xc5,0x60]
@@ -34,10 +36,12 @@ shaddpc a0, a1, 2
 shsubpc a0, a1, 2
 # CHECK: shsubpc a0, a1, 2 # encoding: [0x0b,0x95,0x25,0x60]
 lai a0, 2048
-# CHECK: lai a0, 2048 # encoding: [0x7b,0x05,0x10,0x00]
+# CHECK: lai a0, 2048 # encoding: [0x4b,0x05,0x10,0x00]
+lai a0, 2049
+# CHECK: lai a0, 2049 # encoding: [0x4f,0x05,0x10,0x00]
 lai a0, .Ltarget
-# CHECK: lai a0, .Ltarget # encoding: [0x7b,0bAAAA0101,A,A]
-# CHECK: fixup A - offset: 0, value: .Ltarget, kind: fixup_riscv_jal
+# CHECK: lai a0, .Ltarget # encoding: [0x4b'A',0x05'A',A,A]
+# CHECK: fixup A - offset: 0, value: .Ltarget, kind: fixup_riscv_lai
   .space 8
 .Ltarget:
 add.xu a0, a1, a2
@@ -93,6 +97,14 @@ csexti a0, a1, 4
 # CHECK: extrcsi a0, a1, 0, 4 # encoding: [0x0b,0xd5,0x05,0xc8]
 cneg a0, a1, -1
 # CHECK: cnegi a0, a1, -1 # encoding: [0x0b,0xe5,0xf5,0xff]
+lai a0, .Lodd
+# CHECK: lai a0, .Lodd # encoding: [0x4b'A',0x05'A',A,A]
+# CHECK: fixup A - offset: 0, value: .Lodd, kind: fixup_riscv_lai
+.byte 0
+.Lodd:
+lai a0, lai_external
+# CHECK: lai a0, lai_external # encoding: [0x4b'A',0x05'A',A,A]
+# CHECK: fixup A - offset: 0, value: lai_external, kind: fixup_riscv_lai
 
 # DIS: sh1sub a0, a1, a2
 # DIS: clo a0, a1
@@ -103,7 +115,8 @@ cneg a0, a1, -1
 # DIS: shaddpc a0, a1, 0x2
 # DIS: shsubpc a0, a1, 0x2
 # DIS: lai a0, 0x838
-# DIS: lai a0, 0x48
+# DIS: lai a0, 0x83d
+# DIS: lai a0, 0x4c
 # DIS: add.xc a0, a1, a2, 0x3
 # DIS: add.ux a0, a1, a2
 # DIS: sub.ux a0, a1, a2
@@ -123,3 +136,6 @@ cneg a0, a1, -1
 # DIS: extroi a0, a1, 0x0, 0x4
 # DIS: extrcsi a0, a1, 0x0, 0x4
 # DIS: cnegi a0, a1, -0x1
+# DIS: lai a0, 0xb7
+
+# RELOC: R_RISCV_CUSTOM192 lai_external 0x0

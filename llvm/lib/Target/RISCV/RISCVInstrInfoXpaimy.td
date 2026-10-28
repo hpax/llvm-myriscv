@@ -49,9 +49,19 @@ class MyRISCVShAddPc<bits<7> funct7, string mnemonic>
   let Inst{21-20} = shift;
   let DecoderNamespace = "MyRISCV";
 }
-class MyRISCVLoadAddressImmediate
-    : RVInstJ<OPC_CUSTOM_3, (outs GPR:$rd), (ins simm21_lsb0_jal:$imm20),
-              "lai", "$rd, $imm20"> {
+class MyRISCVLoadAddressImmediate<Operand imm>
+    : RVInst<(outs GPR:$rd), (ins imm:$imm21), "lai", "$rd, $imm21",
+             [], InstFormatJ> {
+  bits<21> imm21;
+  bits<5> rd;
+  let Inst{31} = imm21{20};
+  let Inst{30-21} = imm21{10-1};
+  let Inst{20} = imm21{11};
+  let Inst{19-12} = imm21{19-12};
+  let Inst{11-7} = rd;
+  let Inst{6-3} = 0b1001;
+  let Inst{2} = imm21{0};
+  let Inst{1-0} = 0b11;
   let DecoderNamespace = "MyRISCV";
 }
 
@@ -90,6 +100,26 @@ def SDTMyRISCVExtractI : SDTypeProfile<1, 3, [
 def riscv_extrui : RVSDNode<"EXTRUI", SDTMyRISCVExtractI>;
 def riscv_extrsi : RVSDNode<"EXTRSI", SDTMyRISCVExtractI>;
 def txpaimy_uimm5 : RISCVOp, TImmLeaf<XLenVT, [{ return isUInt<5>(Imm); }]>;
+
+def MyRISCVSimm21AsmOperand : ImmAsmOperand<"BareS", 21, ""> {
+  let ParserMethod = "parseJALOffset";
+  let PredicateMethod = "isBareSimmN<21>";
+}
+def simm21_lai : Operand<OtherVT>, ImmLeaf<XLenVT, [{
+  return isInt<21>(Imm);
+}]> {
+  let ParserMatchClass = MyRISCVSimm21AsmOperand;
+  let PrintMethod = "printBranchOperand";
+  let EncoderMethod = "getImmOpValueLAI";
+  let DecoderMethod = "decodeSImmOperand<21>";
+  let MCOperandPredicate = [{
+    int64_t Imm;
+    if (MCOp.evaluateAsConstantImm(Imm))
+      return isInt<21>(Imm);
+    return MCOp.isBareSymbolRef();
+  }];
+  let OperandType = "OPERAND_PCREL";
+}
 
 let Predicates = [HasVendorXpaimy] in {
 def SH1SUB : MyRISCVStdALURR<0b0110000, 0b010, "sh1sub">;
@@ -173,7 +203,7 @@ def : InstAlias<"cneg $rd, $rs1, $imm12",
 
 def SHADDPC : MyRISCVShAddPc<0b0010000, "shaddpc">;
 def SHSUBPC : MyRISCVShAddPc<0b0110000, "shsubpc">;
-def LAI : MyRISCVLoadAddressImmediate, Sched<[WriteIALU]>;
+def LAI : MyRISCVLoadAddressImmediate<simm21_lai>, Sched<[WriteIALU]>;
 
 defm LR_B  : LR_r_aq_rl<0b000, "lr.b">,
              Sched<[WriteAtomicLDW, ReadAtomicLDW]>;

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+// Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
 
 #include "RISCVAsmBackend.h"
 #include "RISCVFixupKinds.h"
@@ -81,6 +82,7 @@ MCFixupKindInfo RISCVAsmBackend::getFixupKindInfo(MCFixupKind Kind) const {
       {"fixup_riscv_pcrel_lo12_i", 20, 12, 0},
       {"fixup_riscv_pcrel_lo12_s", 0, 32, 0},
       {"fixup_riscv_jal", 12, 20, 0},
+      {"fixup_riscv_lai", 0, 32, 0},
       {"fixup_riscv_branch", 0, 32, 0},
       {"fixup_riscv_rvc_jump", 2, 11, 0},
       {"fixup_riscv_rvc_branch", 0, 16, 0},
@@ -552,6 +554,16 @@ static uint64_t adjustFixupValue(const MCFixup &Fixup, uint64_t Value,
     // Inst{19-12} = Hi8;
     Value = (Sbit << 19) | (Lo10 << 9) | (Mid1 << 8) | Hi8;
     return Value;
+  }
+  case RISCV::fixup_riscv_lai: {
+    if (!isInt<21>(Value))
+      Ctx.reportError(Fixup.getLoc(), "fixup value out of range");
+    unsigned Sbit = (Value >> 20) & 0x1;
+    unsigned Hi8 = (Value >> 12) & 0xff;
+    unsigned Mid1 = (Value >> 11) & 0x1;
+    unsigned Lo10 = (Value >> 1) & 0x3ff;
+    return (Sbit << 31) | (Lo10 << 21) | (Mid1 << 20) | (Hi8 << 12) |
+           ((Value & 1) << 2);
   }
   case RISCV::fixup_riscv_qc_e_branch:
   case RISCV::fixup_riscv_branch: {

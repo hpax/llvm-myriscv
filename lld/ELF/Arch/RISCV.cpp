@@ -82,7 +82,7 @@ namespace {
 enum Op {
   ADDI = 0x13,
   AUIPC = 0x17,
-  CUSTOM3 = 0x7b,
+  NMSUB = 0x4b,
   JALR = 0x67,
   LD = 0x3003,
   LUI = 0x37,
@@ -352,6 +352,7 @@ void RISCV::scanSectionImpl(InputSectionBase &sec, Relocs<RelTy> rels,
 
     // PC-relative relocations:
     case R_RISCV_JAL:
+    case R_RISCV_LAI:
     case R_RISCV_BRANCH:
     case R_RISCV_PCREL_HI20:
     case R_RISCV_RVC_BRANCH:
@@ -540,6 +541,20 @@ void RISCV::relocate(uint8_t *loc, const Relocation &rel, uint64_t val) const {
     uint32_t imm11 = extractBits(val, 11, 11) << 20;
     uint32_t imm19_12 = extractBits(val, 19, 12) << 12;
     insn |= imm20 | imm10_1 | imm11 | imm19_12;
+
+    write32le(loc, insn);
+    return;
+  }
+
+  case R_RISCV_LAI: {
+    checkInt(ctx, loc, val, 21, rel);
+
+    uint32_t insn = read32le(loc) & 0xFFB;
+    uint32_t imm20 = extractBits(val, 20, 20) << 31;
+    uint32_t imm10_1 = extractBits(val, 10, 1) << 21;
+    uint32_t imm11 = extractBits(val, 11, 11) << 20;
+    uint32_t imm19_12 = extractBits(val, 19, 12) << 12;
+    insn |= imm20 | imm10_1 | imm11 | imm19_12 | (extractBits(val, 0, 0) << 2);
 
     write32le(loc, insn);
     return;
@@ -1017,12 +1032,12 @@ static bool relaxPcrelHi20(Ctx &ctx, const InputSection &sec, size_t i,
     return false;
 
   const int64_t displace = r.sym->getVA(ctx, r.addend) - loc;
-  if (!isInt<21>(displace) || (displace & 1))
+  if (!isInt<21>(displace))
     return false;
 
-  sec.relaxAux->relocTypes[i] = R_RISCV_JAL;
+  sec.relaxAux->relocTypes[i] = R_RISCV_LAI;
   sec.relaxAux->relocTypes[i + 2] = R_RISCV_RELAX;
-  sec.relaxAux->writes.push_back(CUSTOM3 | rd << 7);
+  sec.relaxAux->writes.push_back(NMSUB | rd << 7);
   return true;
 }
 
@@ -1348,6 +1363,7 @@ void RISCV::finalizeRelax(int passes) const {
             write16le(p, aux.writes[writesIdx++]);
             break;
           case R_RISCV_JAL:
+          case R_RISCV_LAI:
             skip = 4;
             write32le(p, aux.writes[writesIdx++]);
             break;

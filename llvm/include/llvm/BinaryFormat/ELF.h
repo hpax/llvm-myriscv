@@ -725,6 +725,7 @@ enum {
 #define ELF_RISCV_NONSTANDARD_RELOC(_vendor, name, value) name = value,
 #include "ELFRelocs/RISCV_nonstandard.def"
 #undef ELF_RISCV_NONSTANDARD_RELOC
+  R_RISCV_LAI = R_RISCV_CUSTOM192,
 };
 
 enum {
