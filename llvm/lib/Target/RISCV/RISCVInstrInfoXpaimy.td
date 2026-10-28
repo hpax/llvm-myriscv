@@ -49,6 +49,11 @@ class MyRISCVShAddPc<bits<7> funct7, string mnemonic>
   let Inst{21-20} = shift;
   let DecoderNamespace = "MyRISCV";
 }
+class MyRISCVLoadAddressImmediate
+    : RVInstJ<OPC_CUSTOM_3, (outs GPR:$rd), (ins simm21_lsb0_jal:$imm20),
+              "lai", "$rd, $imm20"> {
+  let DecoderNamespace = "MyRISCV";
+}
 
 class MyRISCVExtractR<bits<2> kind, string mnemonic>
     : RVInstR<0, 0b101, OPC_CUSTOM_1, (outs GPR:$rd),
@@ -168,6 +173,7 @@ def : InstAlias<"cneg $rd, $rs1, $imm12",
 
 def SHADDPC : MyRISCVShAddPc<0b0010000, "shaddpc">;
 def SHSUBPC : MyRISCVShAddPc<0b0110000, "shsubpc">;
+def LAI : MyRISCVLoadAddressImmediate, Sched<[WriteIALU]>;
 
 defm LR_B  : LR_r_aq_rl<0b000, "lr.b">,
              Sched<[WriteAtomicLDW, ReadAtomicLDW]>;

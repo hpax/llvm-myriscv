@@ -33,6 +33,13 @@ shaddpc a0, a1, 2
 # CHECK: shaddpc a0, a1, 2 # encoding: [0x0b,0x95,0x25,0x20]
 shsubpc a0, a1, 2
 # CHECK: shsubpc a0, a1, 2 # encoding: [0x0b,0x95,0x25,0x60]
+lai a0, 2048
+# CHECK: lai a0, 2048 # encoding: [0x7b,0x05,0x10,0x00]
+lai a0, .Ltarget
+# CHECK: lai a0, .Ltarget # encoding: [0x7b,0bAAAA0101,A,A]
+# CHECK: fixup A - offset: 0, value: .Ltarget, kind: fixup_riscv_jal
+  .space 8
+.Ltarget:
 add.xu a0, a1, a2
 # CHECK: add.xu a0, a1, a2 # encoding: [0x2b,0x85,0xc5,0x00]
 add.xu a0, a1, -1
@@ -95,6 +102,8 @@ cneg a0, a1, -1
 # DIS: extrui a0, a1, 0x3, 0x4
 # DIS: shaddpc a0, a1, 0x2
 # DIS: shsubpc a0, a1, 0x2
+# DIS: lai a0, 0x838
+# DIS: lai a0, 0x48
 # DIS: add.xc a0, a1, a2, 0x3
 # DIS: add.ux a0, a1, a2
 # DIS: sub.ux a0, a1, a2
