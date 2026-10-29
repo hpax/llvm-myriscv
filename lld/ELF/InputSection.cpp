@@ -927,7 +927,7 @@ uint64_t InputSectionBase::getRelocTargetVA(Ctx &ctx, const Relocation &r,
     if (r.expr == RE_ARM_PCA)
       // Some PC relative ARM (Thumb) relocations align down the place.
       p = p & 0xfffffffc;
-    if (r.sym->isUndefined()) {
+    if (r.sym->isUndefined() && !r.sym->getName().empty()) {
       // On ARM and AArch64 a branch to an undefined weak resolves to the next
       // instruction, otherwise the place. On RISC-V, resolve an undefined weak
       // to the same instruction to cause an infinite loop (making the user
