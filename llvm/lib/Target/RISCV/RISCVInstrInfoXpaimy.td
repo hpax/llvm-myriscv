@@ -340,6 +340,12 @@ class MyRISCVMachineR<bits<2> kind, bits<3> funct3, string mnemonic>
   let DecoderNamespace = "MyRISCVMicro";
   let isAsmParserOnly = 1;
 }
+class MyRISCVWaitFor
+    : RVInstR<0b0001000, 0b000, OPC_SYSTEM, (outs GPR:$rd),
+              (ins GPR:$rs1), "wfi", "$rd, $rs1"> {
+  let rs2 = 0b00101;
+  let DecoderNamespace = "MyRISCVMicro";
+}
 
 def ADD_XU : MyRISCVSystemR<0b0000000, 0b000, "add.xu">;
 def ADD_XUI : MyRISCVSystemI<0b000, "add.xu">;
@@ -358,4 +364,5 @@ def ADD_SC : MyRISCVContextR<0b10, 0b011, "add.sc">;
 def SUB_SC : MyRISCVContextR<0b11, 0b011, "sub.sc">;
 def ADD_SM : MyRISCVMachineR<0b10, 0b011, "add.sm">;
 def SUB_SM : MyRISCVMachineR<0b11, 0b011, "sub.sm">;
+def WFI_MYRISCV : MyRISCVWaitFor, Sched<[]>;
 }
