@@ -521,7 +521,6 @@ def : SysReg<"dscratch1", 0x7B3>;
 let FeaturesRequired = [{ {RISCV::FeatureVendorXpasmy} }] in {
 def : SysReg<"myriscv.user_context", 0x7F0, RV32Only=true>;
 def : SysReg<"myriscv.cie", 0x7F2, RV32Only=true>;
-def : SysReg<"myriscv.waitfor", 0x7F3, RV32Only=true>;
 def : SysReg<"myriscv.sys_context", 0xFF4, RV32Only=true>;
 def : SysReg<"myriscv.ncontexts", 0xFF5, RV32Only=true>;
 }

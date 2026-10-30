@@ -64,6 +64,10 @@ add.sm a0, a1, a2
 # CHECK: add.sm a0, a1, a2 # encoding: [0x2b,0xb5,0xc5,0x80]
 c.ecall
 # CHECK: c.ecall # encoding: [0x02,0x80]
+wfi a0, a1
+# CHECK: wfi a0, a1 # encoding: [0x73,0x85,0x55,0x10]
+wfi zero, zero
+# CHECK: wfi zero, zero # encoding: [0x73,0x00,0x50,0x10]
 
 slo a0, a1, 3
 # CHECK: sloi a0, a1, 3 # encoding: [0x13,0x95,0x35,0x80]
@@ -124,6 +128,8 @@ lai a0, lai_external
 # DIS: sub.cx a0, a1, a2, 0x3
 # DIS: add.sc a0, a1, a2, 0x3
 # DIS: c.ecall
+# DIS: wfi a0, a1
+# DIS: wfi zero, zero
 # DIS: sloi a0, a1, 0x3
 # DIS: sroi a0, a1, 0x3
 # DIS: srcsi a0, a1, 0x3
@@ -136,6 +142,6 @@ lai a0, lai_external
 # DIS: extroi a0, a1, 0x0, 0x4
 # DIS: extrcsi a0, a1, 0x0, 0x4
 # DIS: cnegi a0, a1, -0x1
-# DIS: lai a0, 0xb7
+# DIS: lai a0, 0xbf
 
 # RELOC: R_RISCV_CUSTOM192 lai_external 0x0
