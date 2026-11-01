@@ -91,6 +91,22 @@ class MyRISCVExtend<bits<2> kind, string mnemonic>
   let Inst{31-30} = kind;
   let DecoderNamespace = "MyRISCV";
 }
+class MyRISCVTrapR<bits<3> funct3, string mnemonic>
+    : RVInstR<0, funct3, OPC_CUSTOM_3, (outs),
+              (ins uimm5:$trapcode, GPR:$rs1, GPR:$rs2), mnemonic,
+              "$trapcode, $rs1, $rs2"> {
+  bits<5> trapcode;
+  let Inst{11-7} = trapcode;
+  let DecoderNamespace = "MyRISCV";
+}
+class MyRISCVTrapI<bits<3> funct3, string mnemonic>
+    : RVInstI<funct3, OPC_CUSTOM_2, (outs),
+              (ins uimm5:$trapcode, GPR:$rs1, simm12_lo:$imm12), mnemonic,
+              "$trapcode, $rs1, $imm12"> {
+  bits<5> trapcode;
+  let Inst{11-7} = trapcode;
+  let DecoderNamespace = "MyRISCV";
+}
 }
 
 def SDTMyRISCVExtractI : SDTypeProfile<1, 3, [
@@ -200,6 +216,23 @@ def CNEGN : MyRISCVCustomR<0b0100000, 0b110, "cnegn">;
 def CNEGI : MyRISCVCustomI<0b110, "cnegi">;
 def : InstAlias<"cneg $rd, $rs1, $imm12",
                 (CNEGI GPR:$rd, GPR:$rs1, simm12_lo:$imm12), 0>;
+
+def TRAPEQ  : MyRISCVTrapR<0b000, "trapeq">;
+def TRAPNE  : MyRISCVTrapR<0b001, "trapne">;
+def TRAPAEQZ : MyRISCVTrapR<0b010, "trapaeqz">;
+def TRAPANEZ : MyRISCVTrapR<0b011, "trapanez">;
+def TRAPLT  : MyRISCVTrapR<0b100, "traplt">;
+def TRAPGE  : MyRISCVTrapR<0b101, "trapge">;
+def TRAPLTU : MyRISCVTrapR<0b110, "trapltu">;
+def TRAPGEU : MyRISCVTrapR<0b111, "trapgeu">;
+def TRAPEQI  : MyRISCVTrapI<0b000, "trapeqi">;
+def TRAPNEI  : MyRISCVTrapI<0b001, "trapnei">;
+def TRAPAEQZI : MyRISCVTrapI<0b010, "trapaeqzi">;
+def TRAPANEZI : MyRISCVTrapI<0b011, "trapanezi">;
+def TRAPLTI  : MyRISCVTrapI<0b100, "traplti">;
+def TRAPGEI  : MyRISCVTrapI<0b101, "trapgei">;
+def TRAPLTUI : MyRISCVTrapI<0b110, "trapltui">;
+def TRAPGEUI : MyRISCVTrapI<0b111, "trapgeui">;
 
 def SHADDPC : MyRISCVShAddPc<0b0010000, "shaddpc">;
 def SHSUBPC : MyRISCVShAddPc<0b0110000, "shsubpc">;
