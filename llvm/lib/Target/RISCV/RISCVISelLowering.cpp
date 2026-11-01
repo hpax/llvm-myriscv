@@ -936,6 +936,8 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
 
   setOperationAction({ISD::TRAP, ISD::DEBUGTRAP}, MVT::Other, Legal);
   setOperationAction(ISD::INTRINSIC_WO_CHAIN, MVT::Other, Custom);
+  if (Subtarget.hasVendorXpaimy())
+    setOperationAction(ISD::INTRINSIC_VOID, MVT::Other, Custom);
   if (Subtarget.is64Bit())
     setOperationAction(ISD::INTRINSIC_WO_CHAIN, MVT::i32, Custom);
 
@@ -12620,6 +12622,14 @@ SDValue RISCVTargetLowering::LowerINTRINSIC_VOID(SDValue Op,
   switch (IntNo) {
   default:
     break;
+  case Intrinsic::riscv_myriscv_trap: {
+    SDValue Ops[] = {Op.getOperand(2),
+                     DAG.getRegister(RISCV::X0, Subtarget.getXLenVT()),
+                     DAG.getRegister(RISCV::X0, Subtarget.getXLenVT()),
+                     Op.getOperand(0)};
+    return SDValue(
+        DAG.getMachineNode(RISCV::TRAPEQ, SDLoc(Op), MVT::Other, Ops), 0);
+  }
   case Intrinsic::riscv_seg2_store_mask:
   case Intrinsic::riscv_seg3_store_mask:
   case Intrinsic::riscv_seg4_store_mask:

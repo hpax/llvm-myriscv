@@ -96,6 +96,9 @@ let TargetPrefix = "riscv" in {
   def int_riscv_myriscv_clo : RISCVBitManipGPRIntrinsics;
   def int_riscv_myriscv_cto : RISCVBitManipGPRIntrinsics;
   def int_riscv_myriscv_cpopz : RISCVBitManipGPRIntrinsics;
+  def int_riscv_myriscv_trap
+      : Intrinsic<[], [llvm_i32_ty],
+                  [IntrNoMem, IntrHasSideEffects, ImmArg<ArgIndex<0>>]>;
 } // TargetPrefix = "riscv"
 
 //===----------------------------------------------------------------------===//

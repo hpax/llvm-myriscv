@@ -11,3 +11,7 @@ unsigned cto(unsigned x) { return __builtin_riscv_myriscv_cto_32(x); }
 unsigned cpopz(unsigned x) { return __builtin_riscv_myriscv_cpopz_32(x); }
 // CHECK-LABEL: define{{.*}} @cpopz
 // CHECK: call i32 @llvm.riscv.myriscv.cpopz.i32
+
+void trapn(void) { __builtin_riscv_trapn(3); }
+// CHECK-LABEL: define{{.*}} @trapn
+// CHECK: call void @llvm.riscv.myriscv.trap(i32 3)

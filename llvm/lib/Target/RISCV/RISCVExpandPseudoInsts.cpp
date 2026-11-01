@@ -87,6 +87,60 @@ bool RISCVExpandPseudo::runOnMachineFunction(MachineFunction &MF) {
   for (auto &MBB : MF)
     Modified |= expandMBB(MBB);
 
+  if (STI->hasVendorXpaimy()) {
+    for (auto MBBI = MF.begin(), E = MF.end(); MBBI != E; ++MBBI) {
+      auto NextMBBI = std::next(MBBI);
+      if (NextMBBI == E || NextMBBI->size() != 1)
+        continue;
+
+      MachineInstr &Trap = NextMBBI->front();
+      if (Trap.getOpcode() != RISCV::TRAPEQ)
+        continue;
+
+      if (MBBI->empty())
+        continue;
+      MachineInstr *Branch = &*MBBI->getLastNonDebugInstr();
+      if (Branch->getNumOperands() != 3 ||
+          !Branch->getOperand(2).isMBB())
+        continue;
+
+      unsigned TrapOpcode;
+      switch (Branch->getOpcode()) {
+      case RISCV::BEQ:
+        TrapOpcode = RISCV::TRAPNE;
+        break;
+      case RISCV::BNE:
+        TrapOpcode = RISCV::TRAPEQ;
+        break;
+      case RISCV::BLT:
+        TrapOpcode = RISCV::TRAPGE;
+        break;
+      case RISCV::BGE:
+        TrapOpcode = RISCV::TRAPLT;
+        break;
+      case RISCV::BLTU:
+        TrapOpcode = RISCV::TRAPGEU;
+        break;
+      case RISCV::BGEU:
+        TrapOpcode = RISCV::TRAPLTU;
+        break;
+      default:
+        continue;
+      }
+
+      if (Branch->getOperand(2).getMBB() != &*std::next(NextMBBI))
+        continue;
+      BuildMI(*MBBI, Branch->getIterator(), Branch->getDebugLoc(),
+              TII->get(TrapOpcode))
+          .addImm(Trap.getOperand(0).getImm())
+          .addReg(Branch->getOperand(0).getReg())
+          .addReg(Branch->getOperand(1).getReg());
+      Branch->eraseFromParent();
+      Trap.eraseFromParent();
+      Modified = true;
+    }
+  }
+
 #ifndef NDEBUG
   const unsigned NewSize = getInstSizeInBytes(MF);
   assert(OldSize >= NewSize);
