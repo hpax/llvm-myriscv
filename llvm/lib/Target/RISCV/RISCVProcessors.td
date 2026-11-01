@@ -141,6 +141,7 @@ def MYRISCV : RISCVProcessorModel<"myriscv",
                                    FeatureStdExtZiccif,
                                    FeatureStdExtZicclsm,
                                    FeatureStdExtZiccrse,
+                                   FeatureStdExtZilx,
                                    FeatureVendorXpaimy,
                                    FeatureVendorXpasmy],
                                   [TuneNoDefaultUnroll]>;

@@ -1,5 +1,7 @@
 # RUN: llvm-mc -triple=riscv32 -show-encoding --mattr=+experimental-zilx %s \
 # RUN:        | FileCheck %s --check-prefixes=CHECK-ENCODING,CHECK-INST
+# RUN: llvm-mc -triple=riscv32 -mcpu=myriscv -show-encoding %s \
+# RUN:        | FileCheck %s --check-prefixes=CHECK-ENCODING,CHECK-INST
 # RUN: not llvm-mc -triple=riscv32 -show-encoding %s 2>&1 \
 # RUN:        | FileCheck %s --check-prefix=CHECK-ERROR
 # RUN: llvm-mc -triple=riscv32 -filetype=obj --mattr=+experimental-zilx %s \
