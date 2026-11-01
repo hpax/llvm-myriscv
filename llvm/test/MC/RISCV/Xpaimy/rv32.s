@@ -31,6 +31,14 @@ cneg a0, a1, a2
 # CHECK: cneg a0, a1, a2 # encoding: [0x2b,0xe5,0xc5,0x00]
 cnegi a0, a1, -1
 # CHECK: cnegi a0, a1, -1 # encoding: [0x0b,0xe5,0xf5,0xff]
+trapeq 3, a0, a1
+# CHECK: trapeq 3, a0, a1 # encoding: [0xfb,0x01,0xb5,0x00]
+trapgeu 31, a0, a1
+# CHECK: trapgeu 31, a0, a1 # encoding: [0xfb,0x7f,0xb5,0x00]
+trapeqi 3, a0, -1
+# CHECK: trapeqi 3, a0, -1 # encoding: [0xdb,0x01,0xf5,0xff]
+trapgeui 31, a0, -1
+# CHECK: trapgeui 31, a0, -1 # encoding: [0xdb,0x7f,0xf5,0xff]
 shaddpc a0, a1, 2
 # CHECK: shaddpc a0, a1, 2 # encoding: [0x0b,0x95,0x25,0x20]
 shsubpc a0, a1, 2
@@ -116,11 +124,16 @@ lai a0, lai_external
 # DIS: baeqz a0, a1
 # DIS: extru a0, a1, a2, 0x4
 # DIS: extrui a0, a1, 0x3, 0x4
+# DIS: cnegi a0, a1, -0x1
+# DIS: trapeq 0x3, a0, a1
+# DIS: trapgeu 0x1f, a0, a1
+# DIS: trapeqi 0x3, a0, -0x1
+# DIS: trapgeui 0x1f, a0, -0x1
 # DIS: shaddpc a0, a1, 0x2
 # DIS: shsubpc a0, a1, 0x2
-# DIS: lai a0, 0x838
-# DIS: lai a0, 0x83d
-# DIS: lai a0, 0x4c
+# DIS: lai a0, 0x848
+# DIS: lai a0, 0x84d
+# DIS: lai a0, 0x5c
 # DIS: add.xc a0, a1, a2, 0x3
 # DIS: add.ux a0, a1, a2
 # DIS: sub.ux a0, a1, a2
@@ -142,6 +155,6 @@ lai a0, lai_external
 # DIS: extroi a0, a1, 0x0, 0x4
 # DIS: extrcsi a0, a1, 0x0, 0x4
 # DIS: cnegi a0, a1, -0x1
-# DIS: lai a0, 0xbf
+# DIS: lai a0, 0xcf
 
 # RELOC: R_RISCV_CUSTOM192 lai_external 0x0
