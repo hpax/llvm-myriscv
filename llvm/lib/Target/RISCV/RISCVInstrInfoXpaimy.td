@@ -217,6 +217,7 @@ def CNEGI : MyRISCVCustomI<0b110, "cnegi">;
 def : InstAlias<"cneg $rd, $rs1, $imm12",
                 (CNEGI GPR:$rd, GPR:$rs1, simm12_lo:$imm12), 0>;
 
+let hasSideEffects = 1 in {
 def TRAPEQ  : MyRISCVTrapR<0b000, "trapeq">;
 def TRAPNE  : MyRISCVTrapR<0b001, "trapne">;
 def TRAPAEQZ : MyRISCVTrapR<0b010, "trapaeqz">;
@@ -233,6 +234,9 @@ def TRAPLTI  : MyRISCVTrapI<0b100, "traplti">;
 def TRAPGEI  : MyRISCVTrapI<0b101, "trapgei">;
 def TRAPLTUI : MyRISCVTrapI<0b110, "trapltui">;
 def TRAPGEUI : MyRISCVTrapI<0b111, "trapgeui">;
+}
+def : Pat<(int_riscv_myriscv_trap (i32 uimm5:$trapcode)),
+          (TRAPEQ uimm5:$trapcode, (XLenVT X0), (XLenVT X0))>;
 
 def SHADDPC : MyRISCVShAddPc<0b0010000, "shaddpc">;
 def SHSUBPC : MyRISCVShAddPc<0b0110000, "shsubpc">;

@@ -18,6 +18,10 @@ class RISCVBuiltin<string prototype, string features = ""> : TargetBuiltin {
   let Features = features;
 }
 
+let Attributes = [NoThrow, NoReturn] in {
+def trapn : RISCVBuiltin<"void(_Constant unsigned int)", "xpaimy">;
+}
+
 let Attributes = [NoThrow, Const] in {
 //===----------------------------------------------------------------------===//
 // Zbb extension.

@@ -2467,6 +2467,8 @@ Value *CodeGenFunction::EmitRISCVBuiltinExpr(unsigned BuiltinID,
                            : Intrinsic::riscv_myriscv_cpopz;
     return Builder.CreateIntrinsic(ID, Ops[0]->getType(), Ops);
   }
+  case RISCV::BI__builtin_riscv_trapn:
+    return Builder.CreateIntrinsic(Intrinsic::riscv_myriscv_trap, {}, Ops);
 
   // Zihintntl
   case RISCV::BI__builtin_riscv_ntl_load: {
