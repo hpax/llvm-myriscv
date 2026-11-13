@@ -20847,6 +20847,64 @@ static SDValue performORCombine(SDNode *N, TargetLowering::DAGCombinerInfo &DCI,
                                 const RISCVSubtarget &Subtarget) {
   SelectionDAG &DAG = DCI.DAG;
 
+  if (Subtarget.hasVendorXpaimy() && N->getValueType(0) == MVT::i32) {
+    auto isConstant = [](SDValue V, uint32_t Value) {
+      const auto *C = dyn_cast<ConstantSDNode>(V);
+      return C && C->getZExtValue() == Value;
+    };
+
+    auto matchAndMask = [](SDValue V, uint32_t Mask, SDValue &Input) {
+      if (V.getOpcode() != ISD::AND)
+        return false;
+
+      Input = SDValue();
+      bool SawMask = false;
+      for (SDValue Op : V->ops()) {
+        if (const auto *C = dyn_cast<ConstantSDNode>(Op)) {
+          if (SawMask || C->getZExtValue() != Mask)
+            return false;
+          SawMask = true;
+        } else {
+          if (Input)
+            return false;
+          Input = Op;
+        }
+      }
+      return SawMask && Input;
+    };
+
+    auto matchPackH = [&](SDValue V, SDValue &Rs1, SDValue &Rs2) {
+      if (V.getOpcode() != ISD::OR)
+        return false;
+
+      for (unsigned I = 0; I != 2; ++I) {
+        if (!matchAndMask(V.getOperand(I), 0xff, Rs1))
+          continue;
+
+        SDValue Shift;
+        if (!matchAndMask(V.getOperand(I ^ 1), 0xff00, Shift) ||
+            Shift.getOpcode() != ISD::SHL ||
+            !isConstant(Shift.getOperand(1), 8))
+          continue;
+        Rs2 = Shift.getOperand(0);
+        return true;
+      }
+      return false;
+    };
+
+    for (unsigned I = 0; I != 2; ++I) {
+      SDValue Shift = N->getOperand(I);
+      SDValue Half = N->getOperand(I ^ 1);
+      if (Shift.getOpcode() != ISD::SHL || Shift.getOperand(0) != Half ||
+          !isConstant(Shift.getOperand(1), 16))
+        continue;
+
+      SDValue Rs1, Rs2;
+      if (matchPackH(Half, Rs1, Rs2))
+        return DAG.getNode(RISCVISD::PACKB, SDLoc(N), MVT::i32, Rs1, Rs2);
+    }
+  }
+
   if (SDValue V = combineOrAndToBitfieldInsert(N, DAG, Subtarget))
     return V;
   if (SDValue V = combineBinOpToReduce(N, DAG, Subtarget))

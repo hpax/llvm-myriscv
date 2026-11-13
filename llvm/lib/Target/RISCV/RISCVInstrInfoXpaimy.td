@@ -113,8 +113,12 @@ def SDTMyRISCVExtractI : SDTypeProfile<1, 3, [
   SDTCisVT<0, i32>, SDTCisSameAs<0, 1>,
   SDTCisVT<2, i32>, SDTCisVT<3, i32>
 ]>;
+def SDTMyRISCVPackB : SDTypeProfile<1, 2, [
+  SDTCisVT<0, i32>, SDTCisSameAs<0, 1>, SDTCisSameAs<0, 2>
+]>;
 def riscv_extrui : RVSDNode<"EXTRUI", SDTMyRISCVExtractI>;
 def riscv_extrsi : RVSDNode<"EXTRSI", SDTMyRISCVExtractI>;
+def riscv_packb : RVSDNode<"PACKB", SDTMyRISCVPackB>;
 def txpaimy_uimm5 : RISCVOp, TImmLeaf<XLenVT, [{ return isUInt<5>(Imm); }]>;
 
 def MyRISCVSimm21AsmOperand : ImmAsmOperand<"BareS", 21, ""> {
@@ -217,6 +221,9 @@ def CNEGI : MyRISCVCustomI<0b110, "cnegi">;
 def : InstAlias<"cneg $rd, $rs1, $imm12",
                 (CNEGI GPR:$rd, GPR:$rs1, simm12_lo:$imm12), 0>;
 
+def PACKB : MyRISCVStdALURR<0b0000100, 0b110, "packb">,
+            Sched<[WritePACK, ReadPACK, ReadPACK]>;
+
 let hasSideEffects = 1 in {
 def TRAPEQ  : MyRISCVTrapR<0b000, "trapeq">;
 def TRAPNE  : MyRISCVTrapR<0b001, "trapne">;
@@ -274,6 +281,7 @@ def : Pat<(sub (shl GPR:$rs1, (i32 2)), GPR:$rs2),
           (SH2SUB GPR:$rs1, GPR:$rs2)>;
 def : Pat<(sub (shl GPR:$rs1, (i32 3)), GPR:$rs2),
           (SH3SUB GPR:$rs1, GPR:$rs2)>;
+def : Pat<(riscv_packb GPR:$rs1, GPR:$rs2), (PACKB GPR:$rs1, GPR:$rs2)>;
 // Prefer SLO to the equivalent Zbs BSET/ADDI sequence.
 let AddedComplexity = 10 in
 def : Pat<(XLenVT (not (shl -1, GPR:$rs2))),
