@@ -28,8 +28,17 @@ using namespace llvm;
 namespace {
 
 class RISCVExpandPseudoPreEmitImpl final : public RISCVExpandPseudoImplBase {
+public:
+  bool run(MachineFunction &MF) {
+    bool Changed = RISCVExpandPseudoImplBase::run(MF);
+    return foldBranchToTrap(MF) || Changed;
+  }
+
+private:
   bool expandMI(MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI,
                 MachineBasicBlock::iterator &NextMBBI) const override;
+
+  bool foldBranchToTrap(MachineFunction &MF) const;
 
   bool expandCCOp(MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI,
                   MachineBasicBlock::iterator &NextMBBI) const;
@@ -170,6 +179,98 @@ bool RISCVExpandPseudoPreEmitImpl::expandMI(
   }
 
   return false;
+}
+
+bool RISCVExpandPseudoPreEmitImpl::foldBranchToTrap(
+    MachineFunction &MF) const {
+  if (!STI->hasVendorXpaimy())
+    return false;
+
+  bool Changed = false;
+  for (auto MBBI = MF.begin(); MBBI != MF.end();) {
+    auto TrapMBBI = std::next(MBBI);
+    if (TrapMBBI == MF.end()) {
+      ++MBBI;
+      continue;
+    }
+
+    auto MergeMBBI = std::next(TrapMBBI);
+    if (MergeMBBI == MF.end()) {
+      ++MBBI;
+      continue;
+    }
+
+    MachineBasicBlock &MBB = *MBBI;
+    MachineBasicBlock &TrapMBB = *TrapMBBI;
+    MachineBasicBlock &MergeMBB = *MergeMBBI;
+    auto TrapI = TrapMBB.getFirstNonDebugInstr();
+    if (TrapI == TrapMBB.end() || TrapI->getOpcode() != RISCV::TRAPEQ ||
+        TrapMBB.getLastNonDebugInstr() != TrapI || TrapMBB.pred_size() != 1 ||
+        !TrapMBB.isPredecessor(&MBB) || TrapMBB.succ_size() != 1 ||
+        !TrapMBB.isSuccessor(&MergeMBB)) {
+      ++MBBI;
+      continue;
+    }
+
+    auto BranchI = MBB.getLastNonDebugInstr();
+    if (BranchI == MBB.end() || BranchI->getNumOperands() != 3 ||
+        !BranchI->getOperand(2).isMBB() ||
+        BranchI->getOperand(2).getMBB() != &MergeMBB) {
+      ++MBBI;
+      continue;
+    }
+
+    unsigned TrapOpcode;
+    switch (BranchI->getOpcode()) {
+    case RISCV::BEQ:
+      TrapOpcode = RISCV::TRAPNE;
+      break;
+    case RISCV::BNE:
+      TrapOpcode = RISCV::TRAPEQ;
+      break;
+    case RISCV::BLT:
+      TrapOpcode = RISCV::TRAPGE;
+      break;
+    case RISCV::BGE:
+      TrapOpcode = RISCV::TRAPLT;
+      break;
+    case RISCV::BLTU:
+      TrapOpcode = RISCV::TRAPGEU;
+      break;
+    case RISCV::BGEU:
+      TrapOpcode = RISCV::TRAPLTU;
+      break;
+    default:
+      ++MBBI;
+      continue;
+    }
+
+    BuildMI(MBB, BranchI, TrapI->getDebugLoc(), TII->get(TrapOpcode))
+        .addImm(TrapI->getOperand(0).getImm())
+        .addReg(BranchI->getOperand(0).getReg())
+        .addReg(BranchI->getOperand(1).getReg());
+    BranchI->eraseFromParent();
+
+    for (MachineInstr &Phi : MergeMBB.phis()) {
+      for (unsigned I = 2; I < Phi.getNumOperands();) {
+        if (Phi.getOperand(I).getMBB() != &TrapMBB) {
+          I += 2;
+          continue;
+        }
+        Phi.removeOperand(I + 1);
+        Phi.removeOperand(I);
+      }
+    }
+
+    MBB.removeSuccessor(&TrapMBB, /*NormalizeSuccProbs=*/true);
+    TrapMBB.removeSuccessor(&MergeMBB);
+    TrapMBB.clear();
+    TrapMBB.eraseFromParent();
+    Changed = true;
+    ++MBBI;
+  }
+
+  return Changed;
 }
 
 bool RISCVExpandPseudoPreEmitImpl::expandCCOp(

@@ -24,3 +24,17 @@ trap:
 done:
   ret void
 }
+
+define void @conditional_unsigned(i32 %x, i32 %y) {
+; CHECK-LABEL: conditional_unsigned:
+; CHECK: trapltu 0, a0, a1
+  %test = icmp ult i32 %x, %y
+  br i1 %test, label %trap, label %done
+
+trap:
+  call void @llvm.riscv.myriscv.trap(i32 0)
+  br label %done
+
+done:
+  ret void
+}
