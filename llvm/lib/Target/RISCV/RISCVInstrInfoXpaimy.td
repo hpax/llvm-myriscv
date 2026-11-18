@@ -224,6 +224,9 @@ def : InstAlias<"cneg $rd, $rs1, $imm12",
 def PACKB : MyRISCVStdALURR<0b0000100, 0b110, "packb">,
             Sched<[WritePACK, ReadPACK, ReadPACK]>;
 
+def DDS_B : MyRISCVCustomR<0b0001000, 0b110, "dds.b">;
+def DDS_D : MyRISCVCustomR<0b0001001, 0b110, "dds.d">;
+
 let hasSideEffects = 1 in {
 def TRAPEQ  : MyRISCVTrapR<0b000, "trapeq">;
 def TRAPNE  : MyRISCVTrapR<0b001, "trapne">;
