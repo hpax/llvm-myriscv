@@ -224,8 +224,17 @@ def : InstAlias<"cneg $rd, $rs1, $imm12",
 def PACKB : MyRISCVStdALURR<0b0000100, 0b110, "packb">,
             Sched<[WritePACK, ReadPACK, ReadPACK]>;
 
-def DDS_B : MyRISCVCustomR<0b0001000, 0b110, "dds.b">;
-def DDS_D : MyRISCVCustomR<0b0001001, 0b110, "dds.d">;
+def DDS_B : RVInstR<0b0001000, 0b110, OPC_CUSTOM_1, (outs GPR:$rd),
+                    (ins GPR:$rs1, GPR:$rs2, uimm2:$shift),
+                    "dds.b", "$rd, $rs1, $rs2, $shift"> {
+  bits<2> shift;
+  let Inst{26-25} = shift;
+  let DecoderNamespace = "MyRISCV";
+  let hasSideEffects = 0;
+  let mayLoad = 0;
+  let mayStore = 0;
+}
+def DDS_D : MyRISCVCustomR<0b0001100, 0b110, "dds.d">;
 
 let hasSideEffects = 1 in {
 def TRAPEQ  : MyRISCVTrapR<0b000, "trapeq">;
