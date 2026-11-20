@@ -3,6 +3,7 @@
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
 //
 //===----------------------------------------------------------------------===//
 //
@@ -1068,6 +1069,8 @@ RISCVCC::CondCode RISCVInstrInfo::getCondFromBranchOpc(unsigned Opc) {
   default:
     return RISCVCC::COND_INVALID;
   case RISCV::BEQ:
+  case RISCV::BEQ_PT:
+  case RISCV::BEQ_PN:
   case RISCV::BEQI:
   case RISCV::CV_BEQIMM:
   case RISCV::QC_BEQI:
@@ -1076,6 +1079,8 @@ RISCVCC::CondCode RISCVInstrInfo::getCondFromBranchOpc(unsigned Opc) {
   case RISCV::NDS_BEQC:
     return RISCVCC::COND_EQ;
   case RISCV::BNE:
+  case RISCV::BNE_PT:
+  case RISCV::BNE_PN:
   case RISCV::BNEI:
   case RISCV::QC_BNEI:
   case RISCV::QC_E_BNEI:
@@ -1084,18 +1089,26 @@ RISCVCC::CondCode RISCVInstrInfo::getCondFromBranchOpc(unsigned Opc) {
   case RISCV::NDS_BNEC:
     return RISCVCC::COND_NE;
   case RISCV::BLT:
+  case RISCV::BLT_PT:
+  case RISCV::BLT_PN:
   case RISCV::QC_BLTI:
   case RISCV::QC_E_BLTI:
     return RISCVCC::COND_LT;
   case RISCV::BGE:
+  case RISCV::BGE_PT:
+  case RISCV::BGE_PN:
   case RISCV::QC_BGEI:
   case RISCV::QC_E_BGEI:
     return RISCVCC::COND_GE;
   case RISCV::BLTU:
+  case RISCV::BLTU_PT:
+  case RISCV::BLTU_PN:
   case RISCV::QC_BLTUI:
   case RISCV::QC_E_BLTUI:
     return RISCVCC::COND_LTU;
   case RISCV::BGEU:
+  case RISCV::BGEU_PT:
+  case RISCV::BGEU_PN:
   case RISCV::QC_BGEUI:
   case RISCV::QC_E_BGEUI:
     return RISCVCC::COND_GEU;
@@ -1304,24 +1317,56 @@ unsigned RISCVCC::getInverseBranchOpcode(unsigned BCC) {
     llvm_unreachable("Unexpected branch opcode!");
   case RISCV::BEQ:
     return RISCV::BNE;
+  case RISCV::BEQ_PT:
+    return RISCV::BNE_PN;
+  case RISCV::BEQ_PN:
+    return RISCV::BNE_PT;
   case RISCV::BEQI:
     return RISCV::BNEI;
   case RISCV::BNE:
     return RISCV::BEQ;
+  case RISCV::BNE_PT:
+    return RISCV::BEQ_PN;
+  case RISCV::BNE_PN:
+    return RISCV::BEQ_PT;
   case RISCV::BNEI:
     return RISCV::BEQI;
   case RISCV::BAEQZ:
     return RISCV::BANEZ;
+  case RISCV::BAEQZ_PT:
+    return RISCV::BANEZ_PN;
+  case RISCV::BAEQZ_PN:
+    return RISCV::BANEZ_PT;
   case RISCV::BANEZ:
     return RISCV::BAEQZ;
+  case RISCV::BANEZ_PT:
+    return RISCV::BAEQZ_PN;
+  case RISCV::BANEZ_PN:
+    return RISCV::BAEQZ_PT;
   case RISCV::BLT:
     return RISCV::BGE;
+  case RISCV::BLT_PT:
+    return RISCV::BGE_PN;
+  case RISCV::BLT_PN:
+    return RISCV::BGE_PT;
   case RISCV::BGE:
     return RISCV::BLT;
+  case RISCV::BGE_PT:
+    return RISCV::BLT_PN;
+  case RISCV::BGE_PN:
+    return RISCV::BLT_PT;
   case RISCV::BLTU:
     return RISCV::BGEU;
+  case RISCV::BLTU_PT:
+    return RISCV::BGEU_PN;
+  case RISCV::BLTU_PN:
+    return RISCV::BGEU_PT;
   case RISCV::BGEU:
     return RISCV::BLTU;
+  case RISCV::BGEU_PT:
+    return RISCV::BLTU_PN;
+  case RISCV::BGEU_PN:
+    return RISCV::BLTU_PT;
   case RISCV::CV_BEQIMM:
     return RISCV::CV_BNEIMM;
   case RISCV::CV_BNEIMM:
@@ -1776,12 +1821,28 @@ bool RISCVInstrInfo::isBranchOffsetInRange(unsigned BranchOp,
     return isInt<11>(BrOffset);
   case RISCV::BEQ:
   case RISCV::BNE:
+  case RISCV::BEQ_PT:
+  case RISCV::BEQ_PN:
+  case RISCV::BNE_PT:
+  case RISCV::BNE_PN:
   case RISCV::BAEQZ:
   case RISCV::BANEZ:
+  case RISCV::BAEQZ_PT:
+  case RISCV::BAEQZ_PN:
+  case RISCV::BANEZ_PT:
+  case RISCV::BANEZ_PN:
   case RISCV::BLT:
   case RISCV::BGE:
   case RISCV::BLTU:
   case RISCV::BGEU:
+  case RISCV::BLT_PT:
+  case RISCV::BLT_PN:
+  case RISCV::BGE_PT:
+  case RISCV::BGE_PN:
+  case RISCV::BLTU_PT:
+  case RISCV::BLTU_PN:
+  case RISCV::BGEU_PT:
+  case RISCV::BGEU_PN:
   case RISCV::BEQI:
   case RISCV::BNEI:
   case RISCV::CV_BEQIMM:

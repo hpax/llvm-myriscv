@@ -737,8 +737,9 @@ include "RISCVInstrFormatsXAIF.td"
 // Instruction Class Templates
 //===----------------------------------------------------------------------===//
 
-class BranchCC_rri<bits<3> funct3, string opcodestr>
-    : RVInstB<funct3, OPC_BRANCH, (outs),
+class BranchCC_rri<bits<3> funct3, string opcodestr,
+                   RISCVOpcode opcode = OPC_BRANCH>
+    : RVInstB<funct3, opcode, (outs),
               (ins GPR:$rs1, GPR:$rs2, bare_simm13_lsb0:$imm12),
               opcodestr, "$rs1, $rs2, $imm12">,
       Sched<[WriteJmp, ReadJmp, ReadJmp]> {

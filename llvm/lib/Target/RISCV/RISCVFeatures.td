@@ -1342,6 +1342,11 @@ def FeatureVendorXpaimy
 def HasVendorXpaimy : Predicate<"Subtarget->hasVendorXpaimy()">,
                       AssemblerPredicate<(all_of FeatureVendorXpaimy),
                                          "'Xpaimy' (MyRISCV nonprivileged extensions)">;
+def HasVendorXpaimyBranchHint
+    : Predicate<"Subtarget->hasVendorXpaimy() && !Subtarget->hasStdExtF()">,
+      AssemblerPredicate<(all_of FeatureVendorXpaimy,
+                          (none_of FeatureStdExtF)),
+                         "'Xpaimy' without 'F' for branch prediction hints">;
 def FeatureVendorXpasmy
     : RISCVExtension<1, 0,
                      "MyRISCV microcontroller system extensions">;

@@ -513,10 +513,12 @@ struct DecoderListEntry {
   const uint8_t *Table;
   FeatureBitset ContainedFeatures;
   const char *Desc;
+  FeatureBitset ExcludedFeatures = {};
 
   bool haveContainedFeatures(const FeatureBitset &ActiveFeatures) const {
-    return ContainedFeatures.none() ||
-           (ContainedFeatures & ActiveFeatures).any();
+    return (ContainedFeatures.none() ||
+            (ContainedFeatures & ActiveFeatures).any()) &&
+           (ExcludedFeatures & ActiveFeatures).none();
   }
 };
 
@@ -580,6 +582,10 @@ static constexpr FeatureBitset XAIFGroup = {RISCV::FeatureVendorXAIFET};
 
 static constexpr DecoderListEntry DecoderList32[]{
     // Vendor Extensions
+    {DecoderTableMyRISCVBranch32,
+     {RISCV::FeatureVendorXpaimy},
+     "MyRISCV branch prediction hints",
+     {RISCV::FeatureStdExtF}},
     {DecoderTableMyRISCV32, {RISCV::FeatureVendorXpaimy},
      "MyRISCV nonprivileged extensions"},
     {DecoderTableMyRISCVMicro32, {RISCV::FeatureVendorXpasmy},

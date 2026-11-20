@@ -34,6 +34,10 @@ class MyRISCVBranch<bits<3> funct3, string mnemonic>
     : BranchCC_rri<funct3, mnemonic> {
   let DecoderNamespace = "MyRISCV";
 }
+class MyRISCVBranchHint<bits<3> funct3, RISCVOpcode opcode, string mnemonic>
+    : BranchCC_rri<funct3, mnemonic, opcode> {
+  let DecoderNamespace = "MyRISCVBranch";
+}
 class MyRISCVCustomI<bits<3> funct3, string mnemonic>
     : RVInstI<funct3, OPC_CUSTOM_0, (outs GPR:$rd),
               (ins GPR:$rs1, simm12_lo:$imm12), mnemonic,
@@ -172,6 +176,25 @@ def SANEZ : MyRISCVStdALURR<0b1100000, 0b011, "sanez">;
 
 def BAEQZ : MyRISCVBranch<0b010, "baeqz">;
 def BANEZ : MyRISCVBranch<0b011, "banez">;
+
+let Predicates = [HasVendorXpaimyBranchHint] in {
+def BEQ_PT   : MyRISCVBranchHint<0b000, OPC_MADD, "beq.pt">;
+def BEQ_PN   : MyRISCVBranchHint<0b000, OPC_MSUB, "beq.pn">;
+def BNE_PT   : MyRISCVBranchHint<0b001, OPC_MADD, "bne.pt">;
+def BNE_PN   : MyRISCVBranchHint<0b001, OPC_MSUB, "bne.pn">;
+def BAEQZ_PT : MyRISCVBranchHint<0b010, OPC_MADD, "baeqz.pt">;
+def BAEQZ_PN : MyRISCVBranchHint<0b010, OPC_MSUB, "baeqz.pn">;
+def BANEZ_PT : MyRISCVBranchHint<0b011, OPC_MADD, "banez.pt">;
+def BANEZ_PN : MyRISCVBranchHint<0b011, OPC_MSUB, "banez.pn">;
+def BLT_PT   : MyRISCVBranchHint<0b100, OPC_MADD, "blt.pt">;
+def BLT_PN   : MyRISCVBranchHint<0b100, OPC_MSUB, "blt.pn">;
+def BGE_PT   : MyRISCVBranchHint<0b101, OPC_MADD, "bge.pt">;
+def BGE_PN   : MyRISCVBranchHint<0b101, OPC_MSUB, "bge.pn">;
+def BLTU_PT  : MyRISCVBranchHint<0b110, OPC_MADD, "bltu.pt">;
+def BLTU_PN  : MyRISCVBranchHint<0b110, OPC_MSUB, "bltu.pn">;
+def BGEU_PT  : MyRISCVBranchHint<0b111, OPC_MADD, "bgeu.pt">;
+def BGEU_PN  : MyRISCVBranchHint<0b111, OPC_MSUB, "bgeu.pn">;
+}
 
 def EXTRU   : MyRISCVExtractR<0b00, "extru">;
 def EXTRS   : MyRISCVExtractR<0b01, "extrs">;

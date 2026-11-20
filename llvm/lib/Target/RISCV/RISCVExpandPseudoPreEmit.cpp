@@ -3,6 +3,7 @@
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
 //
 //===----------------------------------------------------------------------===//
 //
@@ -223,21 +224,33 @@ bool RISCVExpandPseudoPreEmitImpl::foldBranchToTrap(
     unsigned TrapOpcode;
     switch (BranchI->getOpcode()) {
     case RISCV::BEQ:
+    case RISCV::BEQ_PT:
+    case RISCV::BEQ_PN:
       TrapOpcode = RISCV::TRAPNE;
       break;
     case RISCV::BNE:
+    case RISCV::BNE_PT:
+    case RISCV::BNE_PN:
       TrapOpcode = RISCV::TRAPEQ;
       break;
     case RISCV::BLT:
+    case RISCV::BLT_PT:
+    case RISCV::BLT_PN:
       TrapOpcode = RISCV::TRAPGE;
       break;
     case RISCV::BGE:
+    case RISCV::BGE_PT:
+    case RISCV::BGE_PN:
       TrapOpcode = RISCV::TRAPLT;
       break;
     case RISCV::BLTU:
+    case RISCV::BLTU_PT:
+    case RISCV::BLTU_PN:
       TrapOpcode = RISCV::TRAPGEU;
       break;
     case RISCV::BGEU:
+    case RISCV::BGEU_PT:
+    case RISCV::BGEU_PN:
       TrapOpcode = RISCV::TRAPLTU;
       break;
     default:
