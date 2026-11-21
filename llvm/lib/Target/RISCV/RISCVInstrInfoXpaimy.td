@@ -328,13 +328,17 @@ def : Pat<(riscv_brcc (XLenVT (and GPR:$rs1, GPR:$rs2)), 0, SETNE,
                        bb:$imm12),
           (BANEZ GPR:$rs1, GPR:$rs2, bare_simm13_lsb0_bb:$imm12)>;
 
-let Predicates = [IsRV32] in {
+let Predicates = [HasVendorXpaimy, IsRV32] in {
 def : Pat<(riscv_extrui GPR:$rs1, txpaimy_uimm5:$shift,
                           txpaimy_uimm5:$width),
           (EXTRUI GPR:$rs1, $shift, $width)>;
+def : Pat<(riscv_extrui GPR:$rs1, GPR:$shift, txpaimy_uimm5:$width),
+          (EXTRU GPR:$rs1, GPR:$shift, $width)>;
 def : Pat<(riscv_extrsi GPR:$rs1, txpaimy_uimm5:$shift,
                           txpaimy_uimm5:$width),
           (EXTRSI GPR:$rs1, $shift, $width)>;
+def : Pat<(riscv_extrsi GPR:$rs1, GPR:$shift, txpaimy_uimm5:$width),
+          (EXTRS GPR:$rs1, GPR:$shift, $width)>;
 def : Pat<(sra (shl GPR:$rs1, uimmlog2xlen:$shift),
                 uimmlog2xlen:$shift),
           (EXTRSI GPR:$rs1, 0, (ImmSubFromXLen $shift))>;

@@ -3,6 +3,7 @@
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+// Copyright (C) 2026 H. Peter Anvin <hpa@zytor.com>
 //
 //===----------------------------------------------------------------------===//
 //
@@ -26,6 +27,7 @@
 #include "llvm/IR/PatternMatch.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Pass.h"
+#include "llvm/Support/KnownBits.h"
 #include "llvm/Transforms/Utils/Local.h"
 
 using namespace llvm;
@@ -54,6 +56,8 @@ public:
   bool expandMulReduction(IntrinsicInst &I);
   bool widenVPMerge(Instruction *I);
   bool visitFreezeInst(FreezeInst &BO);
+  Value *createXpaimyExtractRotate(Value *Val, Value *Shift, unsigned Width,
+                                   Instruction &InsertBefore);
 };
 } // namespace
 
@@ -75,17 +79,50 @@ public:
 };
 } // namespace
 
-// Try to optimize (i64 (and (zext/sext (i32 X), C1))) if C1 has bit 31 set,
-// but bits 63:32 are zero. If we know that bit 31 of X is 0, we can fill
-// the upper 32 bits with ones.
+Value *RISCVCodeGenPrepareImpl::createXpaimyExtractRotate(
+    Value *Val, Value *Shift, unsigned Width, Instruction &InsertBefore) {
+  if (!ST->hasVendorXpaimy() || ST->is64Bit() ||
+      !Val->getType()->isIntegerTy(32) || isa<ConstantInt>(Shift) || !Width ||
+      Width >= 32)
+    return nullptr;
+
+  KnownBits Known = computeKnownBits(Shift, *DL, nullptr, &InsertBefore, DT);
+  unsigned MaxShift = (~Known.Zero).extractBits(5, 0).getZExtValue();
+  if (MaxShift > 32 - Width)
+    return nullptr;
+
+  // Keep the cross-block range proof visible to SelectionDAG. The low Width
+  // bits of the shift and rotate agree when the field does not wrap.
+  IRBuilder<> Builder(&InsertBefore);
+  return Builder.CreateIntrinsic(Val->getType(), Intrinsic::fshr,
+                                 {Val, Val, Shift});
+}
+
 bool RISCVCodeGenPrepareImpl::visitAnd(BinaryOperator &BO) {
+  using namespace PatternMatch;
+  Value *Val, *Shift;
+  const APInt *Mask;
+  if (match(&BO,
+            m_c_And(m_LShr(m_Value(Val), m_Value(Shift)), m_APInt(Mask))) &&
+      Mask->isMask()) {
+    if (Value *Rotate =
+            createXpaimyExtractRotate(Val, Shift, Mask->countr_one(), BO)) {
+      IRBuilder<> Builder(&BO);
+      Value *Result =
+          Builder.CreateAnd(Rotate, ConstantInt::get(BO.getType(), *Mask));
+      BO.replaceAllUsesWith(Result);
+      BO.eraseFromParent();
+      return true;
+    }
+  }
+
+  // Fill the upper 32 bits of a zero-extended mask with ones when the
+  // sign bit of its input is known to be zero.
   if (!ST->is64Bit())
     return false;
 
   if (!BO.getType()->isIntegerTy(64))
     return false;
-
-  using namespace PatternMatch;
 
   // Left hand side should be a zext nneg.
   Value *LHSSrc;

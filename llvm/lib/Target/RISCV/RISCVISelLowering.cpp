@@ -20566,7 +20566,8 @@ static SDValue combineXpaimyExtract(SDNode *N, SelectionDAG &DAG,
     Shifted = N->getOperand(1);
     Mask = dyn_cast<ConstantSDNode>(N->getOperand(0));
   }
-  if (!Mask || Shifted.getOpcode() != ISD::SRL)
+  if (!Mask ||
+      (Shifted.getOpcode() != ISD::SRL && Shifted.getOpcode() != ISD::ROTR))
     return SDValue();
 
   APInt MaskValue = Mask->getAPIntValue();
@@ -20576,14 +20577,22 @@ static SDValue combineXpaimyExtract(SDNode *N, SelectionDAG &DAG,
   if (Width == 0 || Width == 32)
     return SDValue();
 
-  auto *Shift = dyn_cast<ConstantSDNode>(Shifted.getOperand(1));
-  if (!Shift || Shift->getZExtValue() >= 32)
+  SDValue Shift = Shifted.getOperand(1);
+  if (auto *C = dyn_cast<ConstantSDNode>(Shift))
+    if (C->getZExtValue() >= 32)
+      return SDValue();
+  unsigned MaxShift =
+      (~DAG.computeKnownBits(Shift).Zero).extractBits(5, 0).getZExtValue();
+  // EXTRU rotates before masking, unlike SRL when the field crosses bit 31.
+  if (Shifted.getOpcode() == ISD::SRL && MaxShift > 32 - Width)
     return SDValue();
 
   SDLoc DL(N);
+  if (auto *C = dyn_cast<ConstantSDNode>(Shift))
+    Shift = DAG.getTargetConstant(C->getZExtValue(), DL, MVT::i32);
   SDValue Ops[] = {
       Shifted.getOperand(0),
-      DAG.getTargetConstant(Shift->getZExtValue(), DL, MVT::i32),
+      Shift,
       DAG.getTargetConstant(Width, DL, MVT::i32),
   };
   return DAG.getNode(RISCVISD::EXTRUI, DL, MVT::i32, Ops);
@@ -20610,8 +20619,28 @@ static SDValue combineXpaimySignedExtract(SDNode *N, SelectionDAG &DAG,
     return SDValue();
 
   SDLoc DL(N);
+  SDValue Input = Shifted.getOperand(0);
+  // EXTRS saturates its sign-bit position at bit 31, even for rotations.
+  if (Left == Right && Right != 0 &&
+      (Input.getOpcode() == ISD::SRL || Input.getOpcode() == ISD::SRA ||
+       Input.getOpcode() == ISD::ROTR)) {
+    SDValue Shift = Input.getOperand(1);
+    auto *ConstantShift = dyn_cast<ConstantSDNode>(Shift);
+    unsigned MaxShift =
+        (~DAG.computeKnownBits(Shift).Zero).extractBits(5, 0).getZExtValue();
+    if ((!ConstantShift || ConstantShift->getZExtValue() < 32) &&
+        MaxShift <= Right) {
+      if (ConstantShift)
+        Shift =
+            DAG.getTargetConstant(ConstantShift->getZExtValue(), DL, MVT::i32);
+      return DAG.getNode(RISCVISD::EXTRSI, DL, MVT::i32, Input.getOperand(0),
+                         Shift,
+                         DAG.getTargetConstant(32 - Right, DL, MVT::i32));
+    }
+  }
+
   SDValue Ops[] = {
-      Shifted.getOperand(0),
+      Input,
       DAG.getTargetConstant(Right - Left, DL, MVT::i32),
       DAG.getTargetConstant(32 - Right, DL, MVT::i32),
   };
@@ -21813,6 +21842,22 @@ performSIGN_EXTEND_INREGCombine(SDNode *N, TargetLowering::DAGCombinerInfo &DCI,
   EVT SrcVT = cast<VTSDNode>(N->getOperand(1))->getVT();
   unsigned Opc = Src.getOpcode();
   SDLoc DL(N);
+
+  if (Subtarget.hasVendorXpaimy() && !Subtarget.is64Bit() && VT == MVT::i32 &&
+      SrcVT.isInteger() && SrcVT.getSizeInBits() < 32 &&
+      (Opc == ISD::SRL || Opc == ISD::SRA || Opc == ISD::ROTR)) {
+    unsigned Width = SrcVT.getSizeInBits();
+    SDValue Shift = Src.getOperand(1);
+    auto *C = dyn_cast<ConstantSDNode>(Shift);
+    unsigned MaxShift =
+        (~DAG.computeKnownBits(Shift).Zero).extractBits(5, 0).getZExtValue();
+    if ((!C || C->getZExtValue() < 32) && MaxShift <= 32 - Width) {
+      if (C)
+        Shift = DAG.getTargetConstant(C->getZExtValue(), DL, MVT::i32);
+      return DAG.getNode(RISCVISD::EXTRSI, DL, MVT::i32, Src.getOperand(0),
+                         Shift, DAG.getTargetConstant(Width, DL, MVT::i32));
+    }
+  }
 
   // Fold (sext_inreg (fmv_x_anyexth X), i16) -> (fmv_x_signexth X)
   // Don't do this with Zhinx. We need to explicitly sign extend the GPR.
